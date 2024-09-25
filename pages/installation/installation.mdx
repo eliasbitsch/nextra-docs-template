@@ -1,0 +1,205 @@
+import Image from 'next/image'; // Falls du Next.js verwendest
+
+# Preparation
+The following introduction shows how to use the docker container on Linux and on Windows.   
+Note that it is not possible to communicate with other hosts (e.g. Turtlebot) via wifi nor lan if you use docker on Windows.
+
+## Virtualization
+
+- Enable virtualization in your PC's BIOS/UEFI settings if needed.
+
+## Windows
+
+1. Install WSL2 (Windows Subsystem for Linux 2):
+   - Open PowerShell as Administrator
+   - Run the following command:
+
+     ```powershell filename="powershell" copy
+     wsl --install
+     ```
+   - Restart your computer after the installation is complete.
+   - When you first launch WSL2, you'll be prompted to create a username and password for your Linux distribution.
+
+   - You'll be prompted to enter the password you created during the WSL2 setup.
+
+2. Install docker and make sure it is running (here are the instructions: [Ubuntu](https://docs.docker.com/install/linux/docker-ce/ubuntu/) [Windows](https://www.docker.com/products/docker-desktop/) )
+
+3. Install VcXsrv as X11-Server: [link](https://sourceforge.net/projects/vcxsrv/files/latest/download)   
+Make sure that you allow VcXsrv access to public and private networks
+
+4. Start VcXsrv (XLaunch) with following configuration:   
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/XmingConfig.png" 
+  alt="File System" 
+  width={500} 
+  height={300} 
+/>
+</div>
+
+5. Download and extract the folder `Docker-ROS` for setting up ROS in Docker: [FHTW Docker-ROS](https://github.com/TW-Robotics/Docker-ROS/archive/refs/heads/master.zip)
+
+6. Copy the downloaded files to a destination of your choice. e.g. ~/Documents/Docker/FHTW/
+
+7. Double klick on `run_docker_from_hub.bat`
+
+8. You should see a terminal window with the following content:   
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/terminal.png" 
+  alt="File System" 
+  width={500} 
+  height={300} 
+/>
+</div>
+
+`Congratulations! 🥳` You have successfully set up the Docker container on Windows.
+
+## Linux
+
+1. Install docker and make sure it is running (here are the instructions: [Ubuntu](https://docs.docker.com/install/linux/docker-ce/ubuntu/) [Windows](https://www.docker.com/products/docker-desktop/) )
+
+2. Open a Terminal and install Git:
+```bash filename="bash" copy
+sudo apt-get update
+```
+```bash filename="bash" copy
+sudo apt-get install git
+```
+
+3. Clone the repository.
+```bash filename="bash" copy
+git clone https://github.com/TW-Robotics/Docker-ROS.git
+```
+
+4. Navigate to the folder.
+```bash filename="bash" copy
+cd Docker-ROS
+```
+
+5. Start the script.
+```bash filename="bash" copy
+bash run_docker_from_hub.sh
+```
+`Congratulations! 🥳` You have successfully set up the Docker container on Linux.
+
+
+## Development inside the Docker Container
+
+To make it easier to develop within the docker container, a folder "./catkin_ws/src/" (which must be located directly in the folder from which you run the run_docker_from_hub/local) is created. This folder is mounted into the docker container to "/home/fhtw_user/catkin_ws/src/fhtw". This allows you to save your projects on your host computer and execute them in the docker container.   
+
+## Develop with Docker in VS Code
+
+To streamline development inside Docker containers, Visual Studio Code offers two key extensions: **Docker** and **Remote Development**. These extensions allow you to attach to running containers and develop directly inside them.
+
+### Step 1: Install the Docker Extension
+
+First, install the Docker extension for managing and interacting with Docker containers:
+
+1. Install and open [Visual Studio Code](https://code.visualstudio.com/).
+2. Go to the Extensions view by clicking on the Extensions icon in the Activity Bar (on the left-hand side), or press `Ctrl + Shift + X`.
+3. Search for **Docker** and install the extension provided by Microsoft.
+4. Restart VS Code if needed.
+
+### Step 2: Install the Remote Development Extension
+
+To enable full development inside containers, install the **Remote Development** extension pack:
+
+1. In the Extensions view (`Ctrl + Shift + X`), search for **Remote Development**.
+2. Install the following extension pack, which includes:
+   - **Remote - Containers**
+   - **Remote - SSH**
+   - **Remote - WSL**
+   - **ROS (ms-iot.vscode-ros)**
+   - **C++ Intellisense (austin.code-gnu-global)**
+3. Restart VS Code to apply the changes.
+
+### Step 3: Attach VS Code to a Running Docker Container
+
+Once both extensions are installed, follow these steps to attach VS Code to your running Docker container:
+
+1. Ensure your Docker container is running.
+2. Open the **Docker** panel from the Activity Bar on the left-hand side in VS Code.
+3. Under the **Containers** section, locate your running container.
+4. Right-click on the container and select **Attach Visual Studio Code** from the context menu.
+
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/vscode.png" 
+  alt="File System" 
+  width={500} 
+  height={300} 
+/>
+</div>
+
+
+### Step 4: Start Developing Inside the Container
+
+VS Code will now open a new window connected to the running Docker container, allowing you to:
+
+- Access, edit, and save files inside the container.
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/folders.png" 
+  alt="File System" 
+  width={500} 
+  height={300} 
+/>
+</div>
+
+- Use the integrated terminal within the container environment. ´Ctrl + Shift + ö`
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/vs_terminal.png" 
+  alt="File System" 
+  width={500} 
+  height={300} 
+/>
+</div>
+
+As you can see, you are maybe root user in the terminal. To change to the fhtw_user use the following command:
+```bash filename="bash" copy
+bash /ros_entrypoint.sh
+```
+
+- Now you are the fhtw_user and can use the terminal as usual.
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/fhtw_user.png" 
+  alt="File System" 
+  width={500} 
+  height={300} 
+/>
+</div>
+To split the terminal window you can use `Ctrl + Shift + 5` again. But don't forget to change to the fhtw_user again with `bash /ros_entrypoint.sh
+`.
+
+
+- Utilize VS Code's debugging and other tools directly in the container.
+
+This setup ensures a seamless development experience within a consistent containerized environment, especially when working with complex dependencies like ROS.
+
+
+## TMUX (Terminal Multiplexer)
+Further to work with multiple terminals inside docker we recommend using [tmux](https://thoughtbot.com/blog/a-tmux-crash-course) which is set as the default shell.
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/tmux.png" 
+  alt="File System" 
+  width={500} 
+  height={300} 
+/>
+</div>
+
+## Commit changes to the docker container
+To store changes (such as newly installed software) you need to commit these changes from your command line (we recommand powershell for windows and the normal terminal for linux).
+```bash filename="bash" copy
+docker commit [CONTAINER_ID] fhtw_ros_local:latest -m "Commit message"
+```

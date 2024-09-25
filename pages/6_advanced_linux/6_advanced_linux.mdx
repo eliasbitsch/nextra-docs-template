@@ -1,0 +1,606 @@
+# Linux Advanced Utilities
+
+## Summary
+
+**Estimated time to completion:** 1.0 hours
+
+### What will you learn with this unit?
+
+- Permissions
+- Advanced Bash Scripts (with ROS)
+- The `.bashrc` File
+- Environment Variables
+
+## Permissions
+
+Although there are already a lot of good security features built into Linux-based systems, one very important potential vulnerability can come from file permission-based issues resulting from a user not assigning the correct permissions to files and directories.
+
+Let's start by executing a command we already know.
+
+```bash filename="bash" copy
+ls -la src/first_script.sh
+```
+
+```bash filename="output:"
+-rw-r--r-- 1 username username 255 Jul 16 13:43 src/first_script.sh
+```
+
+Here we use `ls -la`, the `-la` flag allows us to see some basic data related to our script, like the permissions of the files/folders, their size, etc.
+
+The output is structured as follows:
+
+```bash filename="output:"
+<permissions> <owner> <group> <size> <Creation date> <file/folder name>
+```
+
+### Each file or directory has 3 permissions types:
+
+- **read**: The Read (r) permission refers to a user's ability to read the contents of the file. It is stated with the character `r`.
+- **write**: The Write (w) permission refers to a user's ability to write or modify a file or directory. It is stated with the character `w`.
+- **execute**: The Execute (x) permission affects a user's ability to execute a file or view the contents of a directory. It is stated with the character `x`.
+
+## Owner and Group
+
+Each file or directory has three user-based permission groups:
+
+- **owner**: Current permissions the file has for others not in the group. The Owner permissions apply only to the owner of the file or directory and will not impact the actions of other users. They are represented in the first 3 characters (`rw-`) of the `ls` output.
+- **group**: Current permissions the file has for users in the same group. The Group permissions apply only to the group that has been assigned to the file or directory, and will not affect the actions of other users. They are represented in the middle 3 characters (`r--`).
+- **all users**: The All Users permissions apply to all other users on the system, and this is the permission group that you want to watch the most. They are represented in the last 3 characters (`r--`).
+
+So, applying all this to our file, we can say that the **owner** of the file (in this case, it's us) has **read** (**r**), **write** (**w**), and no **execute** (**x**) permissions, and the **group** and the **rest of users** have only **read** (**r**) permissions.
+
+Below you find the complete secret to master this spell.
+
+```bash filename="bash"
+rw-r--r--
+```
+
+So, as you may have already deduced, the only permissions that apply are the ones that are explicitly specified with their character. If they appear with a - symbol, it means that the permissions are not applied to the file or folder.
+
+From this, we can see that this file has no **execution** permissions. And this, if we want to actually execute the file, could be a problem, don't you think? Then... how can we change this?
+
+## The `chmod` Command
+
+In Unix-like operating systems, the `chmod` command is used to change the access mode of a file.  
+The name is an abbreviation of "change mode."  
+It is used to modify the permissions of a given file or directory (or many of them). However, there are a few ways to utilize this command, so let's have a look at them one by one.
+
+Change the directory to the folder containing our `first_script.sh`.
+
+```bash filename="bash" copy
+cd src
+```
+
+Let's use the `chmod` command to provide the file execution permissions.
+
+```bash filename="bash" copy
+chmod +x first_script.sh
+```
+
+Let's check if the permissions have changed!
+
+```bash filename="bash" copy
+ls -la first_script.sh
+```
+
+```bash filename="output:"
+-rwxr-xr-x 1 username username 255 Jul 16 13:43 src/first_script.sh
+```
+
+The execution permissions, symbolized by the character `x`, have been added to all permission groups, as you can see.
+
+Now, how do we only modify, let's say, the user's permissions?
+
+### `chmod` in-depth
+
+The syntax of `chmod` is as follows:
+
+```bash filename="bash"
+chmod  [groups to assign the permissions][permissions to assign/remove] [file/folder names]
+```
+
+The remaining two parameters are already known (permissions to assign/remove, file/folder names). The groups can be specified by using the following flags:
+
+- `u`: Owner
+- `g`: Group
+- `o`: Others
+- `a`: All users (does not need to be specified)
+
+To better understand this, let's write down some examples. What would the command be if we simply wanted to give write permissions to the **group**? Can you make a guess? The solution is right here:
+
+```bash filename="bash" copy
+chmod g+w first_script.sh
+```
+
+The permissions would then be changed as a result of the command above to the following:
+
+```bash filename="bash" copy
+ls -la first_script.sh
+```
+
+```bash filename="output:"
+-rwxrwxr-x 1 username username 255 Jul 16 13:43 src/first_script.sh
+```
+
+What if we now wish to delete the execution rights for the group and others, for example? This is what it would look like:
+
+```bash filename="bash" copy
+chmod go-x first_script.sh
+```
+
+The permissions would then be changed as a result of the command above to the following:
+
+```bash filename="output:"
+ls -la first_script.sh
+```
+
+```bash filename="output:"
+-rwxrw-r-- 1 username username 255 Jul 16 13:43 src/first_script.sh
+```
+
+Is everything clearer now? If you want to get used to it, you can keep doing tests. However, as I said at the start of this section, there is another way to change a file's permissions: **Binary References**.
+
+### Binary References (Octal Values)
+
+It's actually fairly straightforward.
+Basically, three integers are substituted for the entire string specifying the permissions (rwxrwxrwx). The first number indicates the Owner permission, the second number reflects the Group rights, and the third number represents all other user permissions.
+
+How do these figures work?
+
+In general, each permission is assigned a number:
+
+- **r** = 4
+- **w** = 2
+- **x** = 1
+
+Then you sum the numbers together to get the integer/number that corresponds to the permissions you want to set. For each of the three permission groups, you'll need to include the binary permissions.
+
+For example, let's imagine we wish to grant the owner complete control (rwx). Then we'd add 4 + 2 + 1 to get 7.
+
+We only want to offer read permissions to the Group now (r--).  
+Then it'd just be 4.
+
+Finally, we don't want to grant any permissions to any other people.  
+That would be a 0 then.
+
+As a result, we'd wind up with `740`. The final command would be as follows:
+
+```bash filename="bash" copy
+chmod 740 first_script.sh
+```
+
+The permissions would then be changed as a result of the command above to the following:
+
+```bash filename="bash" copy
+ls -la first_script.sh
+```
+
+```bash filename="output:"
+-rwxr----- 1 username username 255 Jul 16 13:43 src/first_script.sh
+```
+
+See the following figure for an overview of the octal code meanings.
+
+| Octal Value | File Permission Set | Permission Description             |
+|-------------|---------------------|------------------------------------|
+| 0           | ---                 | No permissions                     |
+| 1           | --x                 | Execute only                       |
+| 2           | -w-                 | Write only                         |
+| 3           | -wx                 | Write and execute                  |
+| 4           | r--                 | Read only                          |
+| 5           | r-x                 | Read and execute                   |
+| 6           | rw-                 | Read and write                     |
+| 7           | rwx                 | Read, write, and execute            |
+
+
+### Summary
+
+We have learned that:
+
+- There are 3 permissions: read (**r**), write (**w**), execute (**x**).
+- There are 4 main groups for the filesystem in Linux: owner (**o**), group (**g**), others (**o**), all (**a**).
+- We can change them in two ways:
+  - By directly specifying permissions at a time, e.g., `chmod +rwx`.
+  - By changing multiple with octal codes, e.g., `chmod 700`.
+
+For a detailed explanation of the above, see: [link](https://www.linode.com/docs/guides/linux-users-and-groups/)
+
+## Advanced Bash Scripts
+
+What you will learn:
+
+- Passing arguments to bash scripts
+- Running commands in the background
+- Removing noisy output from our terminal
+- While and For loops
+- If Queries
+- Killing processes
+
+We will do that by creating a bash script that:
+
+- Starts `roscore` and waits for the `roscore` and `rosmaster`
+- Launches a launch file of the `basic_linux_pkg` ROS package
+- Handles two `if` queries
+- Kills processes based on their PID number
+
+
+```bash filename="bash" showLineNumbers copy
+#!/bin/bash
+
+ARG1="$1" # arguments passed to a script range from $1 ... $N, the number of args is stored in the variable "$#"
+echo "Arg= $ARG1"
+echo "Argument count= $#"
+
+roscore &>/dev/null & # We use the ROS CLI (roscore) to start the roscore and rosmaster an run it in the background (&)
+                            # We redirect the output  (&>/dev/null) of the roscore command so that it won't be printed to the current shell.
+                            # -) /dev/null: The null device is a file that discards all data written to it while reporting that the write operation was successful. 
+                            # -) &: Runs the previous command in the background so that script flow can continue before command finnishes. 
+while ! pgrep "roscore" ; do  # we use a while loop to make sure the roscore is started
+                                # -) !: logical not condition of the next command
+                                # -) pgrep "roscore": returns true when "roscore" is found as running process
+    echo "Waiting for roscore to start"
+    sleep 1 # in sec
+done
+echo "Waiting for rosmaster to start"
+while ! pgrep "rosmaster" ; do
+    echo "Waiting for rosmaster to start"
+    sleep 1
+done
+roslaunch basic_linux_pkg unit1.launch --wait &>/dev/null &    # We use the ROS CLI to launch a file, with the --wait flag we make the launchfile wait for the roscore 
+
+
+if [ "$ARG1" == 'backward' ]; then  # If queries as well as while loops require the spaces next to the [ and ]
+                                    # Here we compare two strings
+    echo "Executing: python3 $(rospack find basic_linux_pkg)/src/robotino_mover.py backward"    
+    rosrun basic_linux_pkg move_robotino.py backward    # We use the ROS CLI
+    python3 $(rospack find basic_linux_pkg)/src/move_robotino.py backward   # In our spezific case we can also directly use python instead of the ROS CLI
+fi                   # the fi querie is closed by the fi command
+
+if [ 1 -ne 0 ]; then # Bash also supports numeric comparison (built in only for integers)
+    # Here we check if 1 is Not Equal to 0
+    echo "1 not equal 0"
+fi
+
+if [ 5 -gt 2 ]; then # Here we check if 5 is greater then 0
+    echo "5 is greater 2"
+fi
+
+
+# Read -p waits untill enter is pressed
+read -p "Press enter to stop the bash script by:
+    - killing the simulation (gazebo)
+    - killing all rosnodes (for loop)
+    - performing cleanup (killall -9 roscore/rosmaster)"
+
+killall -9 gzclient # killall: searches for the given process name and kills it
+killall -9 gzserver # -9: Is the SIGKILL signal, causes the process to terminate immediately (kill) aka. avada kedavra
+
+for proc in "$(rosnode list)"; do # we create a for loop, the variable proc will be the iterater for the output of $(rosnode list)
+    rosnode kill "$proc"    # we use the roscli to kill a rosnode
+done
+
+killall -9 roscore
+killall -9 rosmaster
+return 0
+```
+
+### Summary
+
+We have learned that:
+
+- Arguments can be passed to our scripts and can be accessed using `$1 ... $N` where N is the number of arguments passed
+- We can redirect output of commands. For more about that click (here)[https://stackoverflow.com/questions/24793069/what-does-do-in-bash/24793436#24793436]
+- We can use while and foor loops in bash
+- We can use if queries
+- We can kill processes using their PID
+- We can use the ROS CLI in scripts
+
+### Exercise 1 [10 min]
+
+Create a bash script `exercise1.sh` that does the following:
+
+1. Start roscore
+2. Launch the **unit1.launch** file from the basic_linux_pkg ROS package
+3. It will receive one parameter, which will contain either:
+  - circle
+    - If the parameter is **circle**, the script will call the **move_robotino.py**, from the ROS pkg *basic_linx_pkg* file with the argument `circle`.
+  - forward
+    - If the parameter is **forward**, the script will execute the **move_robotino.py** file with the argument `forward`.
+  - rotate
+    - If the parameter is **rotate**, the script will execute the **move_robotino.py** file with the argument `rotate`.
+4. Stop all gazebo related stuff
+5. Stop all ROS nodes
+
+### Solution
+
+We assign the passed argument to ARG1, followed by starting the roscore and waiting for it. Then we use a if query to compare the passed string.
+
+Now we use the ROS CLI (rosrun) to start the python script with the right argument. Finnaly cleanup.
+
+```bash filename="bash" showLineNumbers copy
+#!/bin/bash
+
+ARG1="$1"
+
+# Start roscore in the background and suppress output
+roscore &>/dev/null &
+
+# Wait for roscore to start
+while ! pgrep "roscore" ; do
+    echo "Waiting for roscore to start"
+    sleep 1
+done
+
+# Wait for rosmaster to start
+echo "Waiting for rosmaster to start"
+while ! pgrep "rosmaster" ; do
+    echo "Waiting for rosmaster to start"
+    sleep 1
+done
+
+# Launch unit1.launch from the basic_linux_pkg with --wait option
+roslaunch basic_linux_pkg unit1.launch --wait &>/dev/null &
+
+# Check the argument and execute corresponding commands
+if [ "$ARG1" == "circle" ]; then
+    echo "Circling"
+    rosrun move_bb8_pkg move_bb8_circle.py
+elif [ "$ARG1" == "forward_backward" ]; then
+    echo "Back and forth"
+    rosrun basic_linux_pkg move_bb8_forward_backward.py
+elif [ "$ARG1" == "square" ]; then
+    echo "Square dancing"
+    rosrun move_bb8_pkg move_bb8_square.py
+else
+    echo "Please enter one of the following: circle, forward_backward, or square"
+fi
+
+# Wait for user input to stop the script
+read -p "Press enter to stop the bash script:"
+
+# Stop Gazebo and ROS processes
+killall -9 gzclient
+killall -9 gzserver
+
+# Kill all ROS nodes
+for proc in $(rosnode list); do
+    rosnode kill "$proc"
+done
+
+# Kill roscore and rosmaster
+killall -9 roscore
+killall -9 rosmaster
+```
+
+## The `.bashrc` File
+
+You just learned about bash scripts in the previous part. Let me now explain you to a unique bash script. I'm referring to the.bashrc file. The.bashrc file is a special bash script that Linux runs every time a new Shell session is started.
+
+When a user opens a new terminal, the.bashrc file is executed as a script. The file itself contains a number of terminal session configurations:
+
+- Coloring
+- Code completion
+- Shell history
+- Command aliases
+- Other features (eg. defining custom functions/ aliases)
+
+The.bashrc file is a hidden file (since it starts with a .), as you may have noticed. It is created by the Linux system automatically for every user and is always saved in the HOME folder of the user (/home/user/.bashrc). However, you may still change it to make your Shell experience more personal. The .bashrc file contains a lot of comments that make it easy to understand, let's have a peek at the contents of our.bashrc file.
+
+```bash filename="bash" copy
+cat $HOME/.bashrc   # The HOME environment variable contains the absolute path to the currents user home directory (/home/user)
+```
+The output will be a long list of comments and configurations. You can also open the file with a text editor to see the contents.
+
+```bash filename="bash" showLineNumbers
+# ~/.bashrc: executed by bash(1) for non-login shells.
+# see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
+# for examples
+
+# If not running interactively, don't do anything
+case $- in
+    *i*) ;;
+      *) return;;
+esac
+
+# don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+HISTCONTROL=ignoreboth
+
+# append to the history file, don't overwrite it
+shopt -s histappend
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=1000
+HISTFILESIZE=2000
+
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+
+# If set, the pattern "**" used in a pathname expansion context will
+# match all files and zero or more directories and subdirectories.
+#shopt -s globstar
+
+# make less more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+# set variable identifying the chroot you work in (used in the prompt below)
+if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
+    debian_chroot=$(cat /etc/debian_chroot)
+fi
+
+# set a fancy prompt (non-color, unless we know we "want" color)
+case "$TERM" in
+    xterm-color|*-256color) color_prompt=yes;;
+esac
+
+# uncomment for a colored prompt, if the terminal has the capability; turned
+# off by default to not distract the user: the focus in a terminal window
+# should be on the output of commands, not on the prompt
+#force_color_prompt=yes
+
+if [ -n "$force_color_prompt" ]; then
+    if [ -x /usr/bin/tput ] && tput setaf 1 >&/dev/null; then
+	# We have color support; assume it's compliant with Ecma-48
+	# (ISO/IEC-6429). (Lack of such support is extremely rare, and such
+	# a case would tend to support setf rather than setaf.)
+	color_prompt=yes
+    else
+	color_prompt=
+    fi
+fi
+
+if [ "$color_prompt" = yes ]; then
+    PS1='${debian_chroot:+($debian_chroot)}\033[01;32m\u@\h\033[00m:\033[01;34m\w\033[00m\$ '
+else
+    PS1='${debian_chroot:+($debian_chroot)}\u@\h:\w\$ '
+fi
+unset color_prompt force_color_prompt
+
+# If this is an xterm set the title to user@host:dir
+case "$TERM" in
+xterm*|rxvt*)
+    PS1="\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a$PS1"
+    ;;
+*)
+    ;;
+esac
+
+# enable color support of ls and also add handy aliases
+if [ -x /usr/bin/dircolors ]; then
+    test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+    alias ls='ls --color=auto'
+    #alias dir='dir --color=auto'
+    #alias vdir='vdir --color=auto'
+
+    alias grep='grep --color=auto'
+    alias fgrep='fgrep --color=auto'
+    alias egrep='egrep --color=auto'
+fi
+
+# colored GCC warnings and errors
+#export GCC_COLORS='error=01;31:warning=01;35:note=01;36:caret=01;32:locus=01:quote=01'
+
+# some more ls aliases
+alias ll='ls -alF'
+alias la='ls -A'
+alias l='ls -CF'
+
+# Add an "alert" alias for long running commands.  Use like so:
+#   sleep 10; alert
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
+# Alias definitions.
+# You may want to put all your additions into a separate file like
+# ~/.bash_aliases, instead of adding them here directly.
+# See /usr/share/doc/bash-doc/examples in the bash-doc package.
+
+if [ -f ~/.bash_aliases ]; then
+    . ~/.bash_aliases
+fi
+
+# enable programmable completion features (you don't need to enable
+# this, if it's already enabled in /etc/bash.bashrc and /etc/profile
+# sources /etc/bash.bashrc).
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/home/username/anaconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/home/username/anaconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/username/anaconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/home/username/anaconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+
+source /opt/ros/noetic/setup.bash
+source $HOME/catkin_ws/devel/setup.bash
+export TURTLEBOT3_MODEL="burger"
+```
+
+Now, as previously stated, the.bashrc script is run every time a new Shell session is started. However, if you want to force the execution from within a Shell, there is a command that will cause the.bashrc file to be executed. The `source` command is what we are looking for.
+
+### Let's modify our .bashrc:
+1. Open the .bashrc file with your favorite IDE:
+
+```bash filename="bash" copy
+vim $HOME/.bashrc
+```
+
+2. Press G to move to the last line of the file.
+3. Press g_ to move to the last non-blank character of the line.
+4. Press o to open a new line.
+
+5. Paste the following commands at the end of the file
+
+```bash filename="bash" copy
+echo "Bashrc finished initializing"
+export MY_WAND="$(which bash)"
+MY_SPELL()
+{
+    echo "My spell executed"
+}
+```
+
+6. Press `ESC`, then `:wq` for write and quit and ENTER to exit the insert mode.
+
+7. Open a new terminal and run the following commands:
+
+```bash filename="bash" copy
+source ~/.bashrc
+```
+
+```bash filename="output:"
+Bashrc finished initializing
+```
+
+```bash filename="bash" copy
+echo $MY_WAND
+```
+
+```bash filename="output:"	
+/usr/bin/bash
+```
+
+```bash filename="bash" copy
+MY_SPELL
+```
+
+```bash filename="output:"
+My spell executed
+```
+
+The here used `source` command is a shell built-in command which is used to read and execute the content of a file.
+
+### Summary
+
+We have learned that:
+
+- Bashrc is a shell script which is run every time a user opens a new shell
+  - Configures environment variables/ settings
+- For more about the .bashrc and how to configure it click here
+
+## Environment Variables
+An environment variable is a dynamically designated value that can influence how computer processes behave.
+
+They are a component of the process's environment. A running process, for example, can look up the directory structure owned by the user running the process by querying the `HOME` variable.
+
+For example, the PS1 variable, which sets the color of the Shell prompt. Furthermore, in Robotics Development and ROS, environment variables are widely used.
+
+## export Command
+When you start a new Shell session, the environment variables are set via the .bashrc file. The Shell has no means of knowing if you modify any of the variable values throughout the different Shell sessions. The **export** command allows you to notify the current Shell and session of a modification you made to an exported variable.
+
+You don't have to wait until the next Shell session to use the variable's new value. In fact, we did exactly that in the previous section: we used the export command to set the variable **MY_WAND** and created a custom dunction **MY_SPELL** in the `.bashrc`. When we used the **source** command to run the `.bashrc` script, it also ran the export command, as well as a custom function creation.

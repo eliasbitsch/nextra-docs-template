@@ -1,0 +1,591 @@
+import LaTeX from '../../components/LaTeX';
+import Image from 'next/image'; // Falls du Next.js verwendest
+
+
+# Unit 5: Mapping & Navigation
+
+**Summary**  
+Estimated time to completion: 2 hours
+
+**Simulated robot:** Turtlebot 3 Burger
+
+### What will you learn with this unit?
+
+- Simulating a robot with [Gazebo](https://gazebosim.org/home) and ROS
+- Kinematic Models: Moving a robot by publishing on topics
+- Creating a map of the simulated environment using 2D-SLAM
+- Using the Advanced Monte Carlo Localization [AMCL](http://wiki.ros.org/amcl) and the ROS [map server](http://wiki.ros.org/map_server)
+- Overview of autonomous navigation with 2D maps using the move base stack
+
+## Robot Simulation with Gazebo
+
+1. We start by launching the simulations provided by Robotis.
+
+```bash filename="bash" copy
+roslaunch turtlebot3_gazebo turtlebot3_world.launch
+```
+
+2. Next, we need to bring up the coordinate frame transformations.
+
+```bash filename="bash" copy
+roslaunch turtlebot3_bringup turtlebot3_remote.launch
+```
+
+You should see the following window pop up:
+
+<br/>
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/SimulationOverview (1).png" 
+  alt="File System" 
+  width={800} 
+  height={300} 
+/>
+</div>
+
+### Exercise [5 min]
+
+- Inspect the running nodes and topics
+- Visualize the robot model and the laser scan data in Rviz
+
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/turtlebot_world_rosgraph.png" 
+  alt="File System" 
+  width={400} 
+  height={300} 
+/>
+<Image
+  src="/assets/turtlebot_world_rviz.png" 
+  alt="File System" 
+  width={500} 
+  height={300} 
+/>
+
+</div>
+
+## Moving a Robot by Publishing on a Topic
+
+### Mobile Robot Locomotion
+
+We will now briefly discuss mobile robot locomotion and forward kinematics.
+
+The term **"robot locomotion"** refers to the various strategies that robots use to move 
+from one location to another. In this unit, we focus on wheeled mobile robots.
+Unlike industrial robots, mobile robots change their pose based on wheel motion.
+The pose $\vec{\xi}_t$ of our robot in the world is thus a function over time and not
+a function of current angular joint values. The mathematics of forward kinematics
+(and inverse kinematics, as we will see in the next chapter) is similar to industrial robot kinematics.
+
+The locomotion of mobile robots is based on kinematic assumptions summarized in a "model". In this unit, we analyze and derive kinematic models for mobile robots. Initially, we start considering the most simple mobile robot: a driven wheel.
+
+Consider a simple wheel on a plane. This wheel has a radius `r`. If the wheel rotates $\Delta \Phi$, the distance moved by the center of the wheel is $\rho$. This can be described by the equation:
+
+<div style={{ display:'flex', justifyContent: 'center' }}>
+$\rho = \Delta \varphi \cdot r$
+</div>
+Where $\rho$ is the motion of the wheel center.
+<br/>
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/wheel.png" 
+  alt="File System" 
+  width={500} 
+  height={300} 
+/>
+</div>
+
+<div style={{ display:'flex', justifyContent: 'center' }}>
+Simple wheel on a plane
+</div>
+
+However, this mobile robot would be somehow useless because it cannot change the orientation. It can only move along the direction of **$\rho$**. Thus, the next step is the extension of this simple wheel model: we add a second wheel and connect the wheels. 
+This model is called a differential-driven mobile robot, and it is the most important model for mobile robotics. A 3D sketch of the 
+model and a 2D simplification is visible in the figure below:
+
+<br/>
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/model.png" 
+  alt="File System" 
+  width={600} 
+  height={300} 
+/>
+</div>
+
+3D model (left) | Simplified 2D model (right)
+
+In the figure on the left side, you see the 3D model. Two wheels are connected with a so-called baseline with length **B**. 
+Notice that robots, like the one above, are differential mobile robots. This is only true if they have two differently controlled 
+wheels that are in alignment. Based on the wheel movement **$\Delta \varphi_l$** and $\delta \varphi_r$, the mobile device is now able 
+to move on a plane. Since the third dimension is not used, a mobile robot is typically controlled on a 2D plane 
+(the top view, see the right part of the figure above).
+
+In the two-dimensional space, the mobile robot is controlled in a world coordinate system/frame $wK$.
+
+The pose 
+$\vec{\xi}_t = (x, y, \theta)^T_t$
+
+
+at time **t** is defined in the world frame. However, the wheel motion 
+is described in the wheel coordinate system and can be projected into the robot coordinate system **_RK** (see red coordinate system) using the kinematic configuration.
+
+Now, it should be obvious that the pose $\vec{\xi}_t$ at **t** must be somehow a function of the wheel motion and the 
+previous pose $\vec{\xi}_{t-1}$. In this section, we will derive functions mapping motion from the world coordinate 
+system to the wheel coordinate system and vice versa.
+
+### Deriving the Change of Pose
+
+
+In this unit, we will only work with differential drive or holonomic mobile robots. Let us continue with the derivation of the change 
+of pose $\vec{\xi}_t$ to $\vec{\xi}_{t+1}$. Consider the following image.
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/ForwardKinematik.png" 
+  alt="File System" 
+  width={500} 
+  height={300}
+/>
+</div>
+
+Simplified Kinematic Model of the Mobile Robot
+
+Thus we define the robot **state** and want to calculate the new **state** $\vec{\xi}_t = (x, y, \theta)$ based on the motion of the left wheel 
+$\Delta \varphi_l$ and the right wheel $\Delta \varphi_r$.
+
+As we can see, the robot will move $||\vec{\rho}||$ meters. The X- and Y-components of $~\vec{\rho}$ have to be estimated based 
+on the latest orientation of the robot (e.g. $\delta_t$) and the change of orientation. This change of the robot's orientation, 
+as well as $~||\vec{\rho}||$, are functions of the wheel motion.
+
+The driven distance:
+
+
+$||\vec{\rho}|| = \frac{\delta_t (\Delta \varphi_l + \Delta \varphi_r)}{2}$
+
+
+The change in orientation:
+
+$\delta \theta = \frac{\delta_t (\Delta \varphi_l - \Delta \varphi_r)}{B}$
+
+
+(Where **B** is the baseline — the distance between the wheels). Based on these calculations, the movement of the robot can be determined. 
+For this calculation, we must know the previous pose $\vec{\xi}_{t-1}$. Accumulating the robot's motion leads to the new pose. 
+To calculate this, we "split" the motion $||\vec{\rho}||$ into the X and Y components.
+
+This is simply done by using sine and cosine:
+
+
+$\vec{\xi}_{t+1} = \vec{\xi}_t + \begin{pmatrix} \Delta X \\ \Delta Y \\ \Delta \theta \end{pmatrix} = \vec{\xi}_t + \begin{pmatrix} ||\vec{\rho}|| \cos(\theta_t + \Delta \theta) \\ ||\vec{\rho}|| \sin(\theta_t + \Delta \theta) \\ \Delta \theta \end{pmatrix}$
+
+
+However, the equation has a shortcoming: **it assumes a linear movement of the robot**, but it is sufficient for our purposes. A more exact solution will be discussed in a different unit.
+
+### Forward Kinematics in ROS
+
+Now that we know how to calculate the forward kinematics of a differential drive mobile robot, let's see how we implement it using ROS. (Remember that we already moved the TurtleBot in the previous unit in the `move_turtlebot.py` file).
+
+In the following example, we will create a node that moves the robot to a specific pose referenced to the starting pose of the robot:
+
+## Simple Goal Mover in ROS
+
+In this example, we'll implement a simple goal mover using ROS. The robot will move to a specified position in a simulated Gazebo environment.
+
+```python filename="python" showLineNumbers copy
+#!/usr/bin/python3
+import rospy
+from nav_msgs.msg import Odometry
+from tf.transformations import euler_from_quaternion
+from geometry_msgs.msg import Point, Twist
+from math import atan2, sqrt, hypot
+
+class SimplePose:
+    def __init__(self):
+        """Initializes the class member variables"""
+        self.x = 0.0
+        self.y = 0.0
+        self.theta = 0.0
+        self.goal_tolerance = 0.2
+        self.sub = rospy.Subscriber("/odom", Odometry, self.odom_callback)
+        self.pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
+        # Waits for a message on the /odom topic to ensure the simulation has started
+        rospy.wait_for_message("/odom", Odometry, 10)
+
+    def odom_callback(self, msg):
+        """Callback function to update the robot's position based on odometry data"""
+        self.x = msg.pose.pose.position.x
+        self.y = msg.pose.pose.position.y
+        rot_q = msg.pose.pose.orientation
+        (_, _, self.theta) = euler_from_quaternion([rot_q.x, rot_q.y, rot_q.z, rot_q.w])
+
+    def go_to(self, goal_point):
+        """Moves the robot towards the goal point"""
+        speed = Twist()
+        rho = float('inf')  # Initially set to a very large number
+
+        while rho > self.goal_tolerance:
+            delta_x = goal_point.x - self.x
+            delta_y = goal_point.y - self.y
+            rho = sqrt(delta_x ** 2 + delta_y ** 2)
+            rospy.loginfo_throttle_identical(1, f"Distance to goal= {rho:.2f}m")
+            angle_to_goal = atan2(delta_y, delta_x)
+
+            if abs(angle_to_goal - self.theta) > 0.1:
+                speed.linear.x = 0.0
+                speed.angular.z = 0.3
+            else:
+                speed.linear.x = 0.22
+                speed.angular.z = 0.0
+            self.pub.publish(speed)
+            rospy.sleep(0.01)
+
+    def stop_robot(self):
+        """Stops the robot's movement"""
+        speed = Twist()
+        speed.linear.x = 0.0
+        speed.angular.z = 0.0
+        self.pub.publish(speed)
+
+if __name__ == '__main__':
+    rospy.init_node("speed_controller")
+    simple_pose_mover = SimplePose()
+
+    goal = Point()
+    goal.x = 5
+    goal.y = 5
+
+    try:
+        simple_pose_mover.go_to(goal)
+    except (KeyboardInterrupt, rospy.ROSException) as e:
+        rospy.logerr(e)
+    finally:
+        simple_pose_mover.stop_robot()
+        position_error = hypot(goal.x - simple_pose_mover.x, goal.y - simple_pose_mover.y)
+        rospy.loginfo(f"Final position error: {position_error:.2f}m")
+```
+
+### Explanation
+
+- **Class Initialization**: We define the `SimplePose` class, which initializes subscribers and publishers for the `/odom` and `/cmd_vel` topics.
+- **Odometry Callback**: This method updates the robot's current position (`x`, `y`, and `theta`) using the odometry data.
+- **Move to Goal**: In the `go_to` method, we calculate the distance (`rho`) and angle to the goal. If the robot is not facing the correct direction, it will rotate until aligned, then move straight.
+- **Stopping the Robot**: After reaching the goal, the robot stops.
+
+### Exercise [10 min]
+Create a launch file with the name simulation2.launch that:
+
+- spawns the turtlebot3 burger in an empty gazebo world at position x=0, y=0
+- starts all TFs for the turtlebot3 burger
+- starts the just now created simple_pose.py and try to understand the code
+- comment the functions in the simple_pose.py so that you understand what is happening
+
+### Exercise Solution
+
+We can launch the TurtleBot in Gazebo and test this script using the following launch file `simulation2.launch`.
+
+```xml filename="xml" showLineNumbers copy
+<launch>
+    <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_empty_world.launch">
+        <arg name="model" value="burger"/>
+        <arg name="x_pos" value="0.0"/>
+        <arg name="y_pos" value="0.0"/>
+    </include>
+
+    <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch"/>
+
+    <node name="simple_pose" pkg="first_pkg" type="simple_pose.py" output="screen"/>
+</launch>
+```
+
+Discussion
+As you probabl have noticed the developed code is not realy working well.
+Let's change this by implementing a direct controller based on the angle and distance to the goal. For this update the __init__ function and the go_to functions as depicted below:
+
+```python filename="python" showLineNumbers copy
+def __init__(self):
+    """Initializes the class member variables
+    """
+    self.x = 0.0
+    self.y = 0.0
+    self.theta = 0.0
+    self.goal_tolerance = 0.02
+
+    self.max_vel=0.22
+    self.max_omega = 2.84
+
+    self.k_rho = 0.3
+    self.k_alpha = 0.8
+
+
+    self.sub = rospy.Subscriber("/odom", Odometry, self.odom_callback)
+    self.pub = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
+    # we wait for a message on the odom topic to make sure the simulation is started
+    rospy.wait_for_message("/odom", Odometry, 10)
+
+
+def go_to(self, goal_point):
+    """Calculates the current distance (rho) to the goal_point as well as the angle to the goal.
+    Based on the delta angle to the goal this function decides wether to rotate the robot in place or go straight ahead.
+
+    Args:
+        goal_point (Point): [description]
+    """
+    speed: Twist = Twist()
+    rho = 999999999999999999
+
+    while rho > self.goal_tolerance:
+        delta_x = goal_point.x - self.x
+        delta_y = goal_point.y - self.y
+        rho = sqrt(delta_x**2 + delta_y**2)
+        rospy.loginfo_throttle_identical(1, "Distance to goal= {}m".format(rho))
+        angle_to_goal = atan2(delta_y, delta_x)
+
+        alpha = angle_to_goal - self.theta
+
+        v = self.k_rho * rho
+        omega = self.k_alpha * alpha
+
+        speed.linear.x = v if v <= self.max_vel else self.max_vel
+        speed.angular.z = omega if omega <= self.max_omega else self.max_omega
+        self.pub.publish(speed)
+        rospy.sleep(0.01)
+```
+
+## Mapping
+
+Mapping describes the process of generating a useable map. In ROS this map is described using two files:
+
+- An image: The discretized map is described using pixels. A white pixel is free, a gray is unknown and a black is occupied   
+- A yaml description file: This file describes the maps hyperparameters such as square meters per pixel
+
+In this unit, we use the [gmapping](http://wiki.ros.org/gmapping) algorithm. This piece of software subscribes to two topics:
+
+Obviously, the gmapping ROS node needs the topic of the laserscaner. Typically, your robot will publish a "\scan_description>\scan" (e.g.: "\front_scan\scan") topic. Since gmapping waits for the "\scan" topic, you have to [remap](http://wiki.ros.org/roslaunch/XML/remap). As you already know, the TF in ROS is used to coordinate the coordinate systems. To be able to transform the laserscan data to the robot's current pose, the TF tree must contain a complete description of the robot's joints as well as the sensor coordinate systems. Additionally, a TF from a world coordinate system to the current robot pose (typically named "\odom") must exist.
+
+After the topics of gmapping were remapped, the node publishes a map. The default hyperparameters of the algorithm are typically good enough for our purpose. Initially, the map will look like the following sketch: 
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/Mapping.png" 
+  alt="File System" 
+  width={500} 
+  height={300}
+/>
+</div>
+
+
+
+The map will be created during manual robot movement 
+(of course, there are solutions for [autonomous map creation](http://wiki.ros.org/frontier_exploration)). Depending on your system, a [ROS keyboard control](http://wiki.ros.org/teleop_twist_keyboard) is enought for this task.The map will be created during manual robot movement (though autonomous solutions for map creation also exist). Depending on your system, ROS keyboard control may be enough for this task.
+
+### Additional Information
+
+As mentioned previously, modern mobile robotics heavily relies on statistics. The **gmapping** ROS package is a **SLAM** (Simultaneous Localization and Mapping) application. In SLAM, we estimate both the current robot pose $ \vec{x}_t $ and the map $ m $. This estimation is based on the knowledge gathered so far — movement commands $\{ \vec{u}_1, \dots, \vec{u}_t \}$ and measurements $\{ \vec{z}_1, \dots, \vec{z}_t \}$. This is summarized by the probability distribution:
+
+$
+p(\vec{x}_t, m \mid \vec{u}_{1:t}, \vec{z}_{1:t})
+$
+
+## Gmapping Demo
+
+We will use the existing TurtleBot3 simulation in **Gazebo** provided by [ROBOTIS](https://emanual.robotis.com/docs/en/platform/turtlebot3/overview/). Execute the following commands in separate terminals:
+
+
+Starts the simulation in Gazebo and spawns the robot in the world
+```bash filename="bash" copy
+roslaunch turtlebot3_gazebo turtlebot3_world.launch 
+```
+Handles coordinate transformations for the robot
+```bash filename="bash" copy
+roslaunch turtlebot3_bringup turtlebot3_remote.launch
+```
+Starts the gmapping-based SLAM for the TurtleBot3
+```bash filename="bash" copy
+roslaunch turtlebot3_slam turtlebot3_gmapping.launch 
+```
+
+### Exercise [5 min]
+
+1. Move the robot using any teleoperation method we've discussed so far.
+2. Inspect the **TF tree** and **rqt_graph**. What do you observe?
+3. Create a complete map of the environment.
+4. Open **RVIz** and visualize the following:
+   - Robot model
+   - TFs (without names)
+   - Laser scan data
+   - The map created by gmapping
+
+### Exercise Solution
+
+To enable teleoperation, you can run the following command:
+
+```bash
+rosrun teleop_twist_keyboard teleop_twist_keyboard.py
+```
+
+Alternatively, you could use **rqt_robot_steering** for control. Refer to the following figures for the desired output in RVIz.
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/Unit3-rqt_graph.png" 
+  alt="File System" 
+  width={400} 
+  height={300}
+/>
+<Image
+  src="/assets/Unit3-rqt_tf_tree.png" 
+  alt="File System" 
+  width={400} 
+  height={300}
+/>
+</div>
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/Unit3-RVIz.png" 
+  alt="File System" 
+  width={500} 
+  height={300}
+/>
+</div>
+
+Now that we know how to create a map, let's look into how to save it for later.
+
+## Map Server
+
+The [map_server](http://wiki.ros.org/map_server) provides utilities to create the YAML and image file.
+
+The syntax is:
+
+```bash filename="bash"
+rosrun map_server map_saver [--occ <threshold_occupied>] [--free <threshold_free>] [-f <mapname>] map:=/your/costmap/topic
+```
+
+Let's save our map in a folder named `maps` inside our package `first_pkg` with the name `unit3_map`:
+
+```bash filename="bash" copy
+rosrun map_server map_saver -f "$(rospack find first_pkg)/maps/unit3_map"
+```
+
+### Exercise [1 min]
+
+- Inspect the generated YAML file.
+
+### Exercise Solution
+
+```yaml
+image: /home/username/catkin_ws/src/JupyterROS/Basic_ROSpy/first_pkg/maps/unit3_map.pgm
+resolution: 0.050000
+origin: [-10.000000, -10.000000, 0.000000]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
+```
+
+## Localization
+
+### Localization Using AMCL
+
+You have already learned the principles of mobile robot localization using wheel motion and kinematics. We have also discussed the issue of noisy data, but we have not found a full solution for the process and sensor noise. Without delving into deeper topics (which are part of the master degree program "Master in Robot Engineering"), we can formulate the main problem: it is not possible to describe robot motion and the robot's state using classic statistical models, such as multivariate Gaussian distributions.
+
+Instead of using parametric probability density functions to describe the robot's state and motion, we can use a technique from statistical physics called **Markov Chain Monte Carlo** (MCMC). MCMC uses many (typically more than 500) samples or potential hypotheses of the robot's state, referred to as "particles". This approach is known as a **particle filter**. The method can be simplified into two main steps:
+
+1. **Sampling**: Each particle is moved according to a noisy motion command. For example, using noisy motion data, we estimate each particle's movement using kinematics. Each particle moves in accordance with the real physical movement. Next, we evaluate each particle using sensor signals (e.g., checking if the motion is consistent with sensor values, like those from an accelerometer) in a probabilistic framework. This results in a set of moved particles, each weighted by the sensor data.
+
+2. **Resampling**: Imagine you have a bag of colored balls — two red and eight blue. The probability of drawing a red ball is 20%. If you sample "with replacement" (putting the ball back after each draw), you should draw a red ball 20% of the time. In resampling, particles are selected based on their weight (better particles are sampled more often). This creates a "survival of the fittest" scenario, where the best hypothesis of the robot's state survives.
+
+The following figure illustrates a particle filter application for robot localization. Each arrow represents a particle, with the starting point representing the robot's position and the arrow's direction indicating orientation (length is not significant).
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/MCMC.png" 
+  alt="File System" 
+  width={500} 
+  height={300}
+/>
+</div>
+
+### Sketch of Particle Filter in ROS
+
+The particle filter is the [default localization algorithm](http://wiki.ros.org/amcl). As shown in the figure above, particles spread further from the "ground truth" over time. To correct this, global information (e.g., maps) is used.
+
+**References:**
+1. C.M. Bishop; *Pattern Recognition and Machine Learning*; Springer, 2006
+2. S. Thrun, W. Burgard & D. Fox; *Probabilistic Robotics (Intelligent Robotics and Autonomous Agents series)*; The MIT Press, 2005
+
+## AMCL Demo
+
+We will now use the **AMCL** particle filter with the map we created. Start everything except for the mapping:
+
+
+Starts simulation in Gazebo with the robot inside
+```bash filename="bash" copy 
+roslaunch turtlebot3_gazebo turtlebot3_world.launch
+```
+Starts coordinate transformations for the robotHandles coordinate transformations for the robot
+```bash filename="bash" copy  
+roslaunch turtlebot3_bringup turtlebot3_remote.launch  
+```
+
+```bash filename="bash" copy
+roslaunch turtlebot3_teleop turtlebot3_teleop_key.launch
+```
+Launch Rviz   
+```bash filename="bash" copy
+rviz 
+```
+
+In **RViz**, display the following:
+
+- Robot Model
+- Laser Scan
+- TFs (without names)
+
+Now start the map server and localization:
+
+```bash filename="bash" copy
+roslaunch turtlebot3_navigation amcl.launch
+```
+
+Execute from the maps folder inside `first_pkg`
+```bash filename="bash" copy
+rosrun map_server map_server unit3_map.yaml
+```
+### Exercise [5 min]
+
+- Add the map topic in RViz.
+- Add the PoseArray topic in RViz.
+- Steer the robot in the map until it localizes itself. With each resampling step, the robot's pose will improve.
+
+### Exercise Solution
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/AMCL_Init.png" 
+  alt="File System" 
+  width={400} 
+  height={300} 
+/>
+<Image
+  src="/assets/AMCL_fin.png" 
+  alt="File System" 
+  width={500} 
+  height={300} 
+/>
+</div>
+
+**Visualization of Advanced Monte Carlo Localization**
+
+### Homework [10 Points]
+
+Create a launch file `unit3_hw.launch` inside the `first_pkg` that:
+
+- Spawns the TurtleBot3 Burger in an empty world.
+- Spawns the TF coordinate transformations for the TurtleBot3 Burger.
+- Starts the Python file `unit3_hw.py`.
+
+Create a Python file `unit3_hw.py` inside `first_pkg` that:
+
+- Makes the robot drive to $n$ goal points, each containing the coordinates $(x, y, \theta)$, where $n \geq 6$.
+- Ensures that the robot stops at the final goal point.

@@ -2,16 +2,25 @@ import React from 'react'
 import { DocsThemeConfig } from 'nextra-theme-docs'
 
 const config: DocsThemeConfig = {
-  logo: <span>My Project</span>,
+  logo: <span>ROS-Ready</span>,
   project: {
-    link: 'https://github.com/shuding/nextra-docs-template',
+    // link: 'https://github.com/shuding/nextra-docs-template',
   },
   chat: {
-    link: 'https://discord.com',
+    // link: 'https://twitter.com',
   },
-  docsRepositoryBase: 'https://github.com/shuding/nextra-docs-template',
+  // docsRepositoryBase: 'https://github.com/shuding/nextra-docs-template',
   footer: {
-    text: 'Nextra Docs Template',
+    text: '',
+
+  },
+  feedback: {
+    content: '', // This disables the feedback button
+
+  },
+
+  editLink: {
+    text: ' ', // This makes the link text a space
   },
 }
 
