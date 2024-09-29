@@ -13,7 +13,7 @@ const config: DocsThemeConfig = {
   },
   // docsRepositoryBase: 'https://github.com/shuding/nextra-docs-template',
   footer: {
-    text: ' ',
+    text: 'Made by Elias Bitsch. Powered by Nextra.',
   },
   feedback: {
     content: ' ', // This disables the feedback button
