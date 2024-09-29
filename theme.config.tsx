@@ -22,6 +22,9 @@ const config: DocsThemeConfig = {
   editLink: {
     text: ' ', // This makes the link text a space
   },
+
 }
+
+
 
 export default config

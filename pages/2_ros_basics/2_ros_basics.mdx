@@ -1,4 +1,5 @@
 import Image from 'next/image'; // Falls du Next.js verwendest
+import GlowingText from '/components/GlowingText';
 
 <h1 style={{ color: 'green', fontSize: '3em', fontWeight: 'bold' }}>ROS Basics in Python</h1>
 
@@ -39,9 +40,9 @@ Execute the following commands in different terminals.
 roslaunch turtlebot3_gazebo turtlebot3_world.launch model:=burger
 ```
 
-- Open another `vertikal` terminal window in tmux by pressing `[ctrl] + [b]` and then `[Shift + 5]`. You now should have two terminal windows side by side.
+2. Open another `vertikal` terminal window in tmux by pressing `[ctrl] + [b]` and then `[Shift + 5]`. You now should have two terminal windows side by side.
 
-2. Spawn the necessary coordinate transformations from the base of the robot to sensors/ actuators:
+3. Spawn the necessary coordinate transformations from the base of the robot to sensors/ actuators:
 
 Paste the following command in the new terminal:
 
@@ -51,20 +52,19 @@ roslaunch turtlebot3_bringup turtlebot3_remote.launch
 
 Hooray so easy is the start of a simulated robot with ROS and [GAZEBO](https://en.wikipedia.org/wiki/Gazebo_simulator).
 
-1. Let's continue by moving our robot. For this execute one of the following commands in a new terminal
+Let's continue by moving our robot. For this execute one of the following commands in a new terminal
 
-- Open another `horizontal` terminal window in tmux by pressing `[ctrl] + [b]` and then `[Shift + 2]`. You now should have two terminal windows side by side.
+4. Open another `horizontal` terminal window in tmux by pressing `[ctrl] + [b]` and then `[Shift + 2]`. You now should have two terminal windows side by side.
 
-2. Move the robot:
+5. Move the robot:
 
 Paste the following command in the new terminal:
 
 ```bash filename="bash" copy
 roslaunch turtlebot3_teleop turtlebot3_teleop_key.launch
 ```
-Now you can move the robot using the keyboard with the `[w,a,s,d,x,s]` keys (turtlebot3_teleop command). But make 
-sure that the terminal window is active, otherwise the robot won't move.
-
+Now you can move the robot using the keyboard with the `[w,a,s,d,x,s]` keys (turtlebot3_teleop command). **But make 
+sure that the `terminal window is active`, otherwise the robot won't move!**
 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
 
   <Image 
@@ -75,9 +75,9 @@ sure that the terminal window is active, otherwise the robot won't move.
   />
 </div>
 
-3. To exit the turtlebot3_teleop_key.launch press `[ctrl] + [c]` at the same time in the terminal where the command was executed.
+5. To exit the turtlebot3_teleop_key.launch press `[ctrl] + [c]` at the same time in the terminal where the command was executed.
 
-4. You can also move the robot using the GUI (rqt_robot_steering) by executing the following command in a new terminal:
+6. You can also move the robot using the GUI (rqt_robot_steering) by executing the following command in a new terminal:
 
 ```bash filename="bash" copy
 rosrun rqt_robot_steering rqt_robot_steering
@@ -141,7 +141,7 @@ cmake  launch  models  package.xml  rviz  worlds
 ```
 Since the turtlebot3_gazebo, turtlebot3_teleop, and rqt_robotsteering are installed from source (using [apt](https://en.wikipedia.org/wiki/APT(software))) you can't find the src folder since only the binaries are installed. You can find them in */opt/ros/noetic/lib/.
 
-
+---
 ### What is a launchfile?
 So far we only know that launchfiles can be used to start an arbitrary number of executables (nodes). Let's have a look at how this is done.
 
@@ -157,7 +157,7 @@ cat turtlebot3_teleop_key.launch
 
 You should see the following now:
 
-```xml filename="xml" copy
+```xml filename="xml" showLineNumbers copy
 <launch>
   <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
   <param name="model" value="$(arg model)"/>
@@ -188,7 +188,7 @@ If your catkin_ws is not setup follow [this tutorial](https://wiki.ros.org/catki
 Let's discuss the syntax for pkg creation now:
 
 
-```bash filename="bash" copy
+```bash filename="bash"
 catkin_create_pkg [package_name] [package_dependecies]
 ```
 The **package_name** is the name of the package you want to create, and the **package_dependencies** are the names of other ROS packages that your package depends on.
@@ -202,6 +202,8 @@ roscd && cd ../src/fhtw
 ```bash filename="bash" copy
 catkin_create_pkg first_pkg rospy roscpp std_msgs sensor_msgs
 ```
+We also set dependencies to rospy, roscpp, std_msgs, and sensor_msgs. These are the most common dependencies for ROS pkgs. rospy is the Python client library for ROS, roscpp is the C++ client library for ROS, std_msgs contains common message types, and sensor_msgs contains message types for sensors.
+
 3. Update the "look-up path" for ROS by sourcing the setup script of our workspace and rebuild the package index
 **source setup.bash:** We source the setup.bash file to load pkgs inside the catkin_ws.
 
@@ -260,12 +262,12 @@ touch launch/first_pkg_launchfile.launch
 
 4. Open the `first_node.py` file with `vim` or `VSCode`:
 
-**Vim:**
+### Vim:
 ```bash filename="bash" copy
 vim src/first_node.py
 ```
 
-Now press `i` to enter insert mode and paste code below:
+5. Now press `i` to enter insert mode and paste code below:
 
 ```python filename="python" copy
 #!/usr/bin/python3
@@ -274,9 +276,10 @@ rospy.init_node('Hagrid')
 print("You're a wizard, Harry.")
 ```
 
-To save and exit press `esc` and type `:wq` for `write` and `quit` and press `enter`.
+6. To save and exit press `esc` and type `:wq` for `write` and `quit` and press `enter`.
 
-**VSCode:**
+### VSCode:
+In VSCode you can simply click on the file and paste the code in the editor.
 
 <div style={{ display: 'flex', justifyContent: 'center' }}>
 <Image
@@ -288,7 +291,7 @@ To save and exit press `esc` and type `:wq` for `write` and `quit` and press `en
 </div>
 
 
-4. Put the following code in the first_node.py file:
+Put the following code in the first_node.py file:
 
 ```python filename="python" copy
 #!/usr/bin/python3
@@ -296,6 +299,7 @@ import rospy
 rospy.init_node('Hagrid')
 print("You're a wizard, Harry.")
 ```
+---
 ### Exercise [5 min]
 Try to copy and adapt the code from the previous turtlebot3_teleop_key.launch launchfile, that we inspected, to start the first_node.py script and start the launchfile.
 
@@ -309,9 +313,9 @@ roscd first_pkg
 
 2. Change to to the `launch` folder we created earlier inside the `first_pkg` and open the first_pkg_launchfile.launch file with vim or VSCode:
 
-**Vim:**
+Vim:
 ```bash filename="bash" copy
-sudo vim launch/first_pkg_launchfile.launch
+vim launch/first_pkg_launchfile.launch
 ```
 
 3. Now press `i` to enter insert mode and paste the following code:
@@ -320,14 +324,13 @@ sudo vim launch/first_pkg_launchfile.launch
 ```xml filename="xml" copy
 <launch>
     <!-- Start our create node -->
-    <node pkg="first_pkg" type="first_node.py" name="Hagrid"  output="screen">
-    </node>
+    <node pkg="first_pkg" type="first_node.py" name="Hagrid"  output="screen"/>
 </launch>
 ```
 
-Press `esc` and type `:wq` for `write` and `quit` and press `enter`.
+4. Press `esc` and type `:wq` for `write` and `quit` and press `enter`.
 
-To start the launchfile simply type in a terminal: 
+5. To start the launchfile simply type in a terminal: 
 
 ```bash filename="bash" copy
 roslaunch first_pkg first_pkg_launchfile.launch
@@ -354,7 +357,9 @@ rospy.init_node('Hagrid')  # Initialize a node called Hagrid
 print("You're a wizard, Harry.")  # Print this statement 
 ```
 
-ouput: You're a wizard, Harry.
+```ansi filename="output:"
+You're a wizard, Harry.
+```
 
 ## ROS Nodes
 
@@ -362,9 +367,9 @@ You have created a node previously in this tutorial, but what exactly is a node?
 
 A ROS node is basically a process that performs computation. It is an executable program running inside your application. You will write many nodes and put them into packages.
 
-Now let the launched node open and open a new terminal by pressing `[ctrl + b]` and `[Shift + 5]` to check if the node is running.
+1. Now let the launched node open and open a new terminal by pressing `[ctrl + b]` and `[Shift + 5]` to check if the node is running.
 
-To see a list of running nodes execute the following command in the new terminal:
+2. To see a list of running nodes execute the following command in the new terminal:
 
 ```bash filename="bash" copy
 rosnode list 
@@ -378,18 +383,19 @@ Here is how we fix that:
 2. Navigate to the first_pkg directory and open the first_node.py file:
 
 ```bash filename="bash" copy
-roscd first_pkg && sudo vim src/first_node.py
+roscd first_pkg && vim src/first_node.py
 ```
 Vim trick to delete all lines in a file:
 - Press `gg` to go to the first line of the file.
 - Press `d` to enter delete mode:
 - Press [`shift + G`] to delete all lines.
 
-3. Press `i` to enter insert mode and paste the following code:
+3. Press `esc` and type `:set paste` to paste the code below:
 
 Make sure the indentation is correct, as Python is very sensitive to indentation.
+If necessary, correct the insterted code.
 
-```python filename="python" copy
+```python filename="python" showLineNumbers copy
 #!/usr/bin/python3
 import rospy
 if __name__ == '__main__':
@@ -397,8 +403,10 @@ if __name__ == '__main__':
     rate = rospy.Rate(10) # We create a Rate object of 10Hz
     while not rospy.is_shutdown(): # Endless loop until Ctrl + C
        print("You're a wizard, Harry")
-       rate.sleep()                    # We sleep the needed time to maintain the Rate fixed above
-    # This program creates an endless loop, while the roscore (more about this later) is not shutdown, that repeats itself 10 times per second (10Hz) until somebody presses Ctrl + C
+       rate.sleep() # We sleep the needed time to maintain the Rate fixed above
+    # This program creates an endless loop, while the roscore
+    # (more about this later) is not shutdown, that repeats itself 10 times per
+    # second (10Hz) until somebody presses Ctrl + C
     # in the Shell or kills the node using the ROS CLI (rosnode kill /Hagrid)
 ```
 
@@ -409,7 +417,7 @@ if __name__ == '__main__':
 ```bash filename="bash" copy
 roslaunch first_pkg first_pkg_launchfile.launch
 ```
-2. Check if you can find the node by typing in a new other terminal, created with `[ctrl + b]` and `[Shift + 5]`:
+6. Check if you can find the node by typing in a new other terminal, created with `[ctrl + b]` and `[Shift + 5]`:
 
 ```bash filename="bash" copy
 rosnode list 
@@ -451,13 +459,32 @@ Attention: If you want to switch between these build tools you **first need to r
 
 To remove the build and devel folder execute the following command:
 
+1. Navigate to the catkin_ws directory:
+```bash filename="bash" copy
+roscd && cd ..
+```
+2. Remove the build and devel folder:
 ```bash filename="bash" copy
 rm -rf build devel
 ```
+- `rm` is for remove
+- `-r` is for recursive (which means it will remove all files and directories inside the build and devel folder)
+- `-f` is for force (which means it will not ask you for confirmation)
 
 Now you can switch between the build tools.
 ```bash filename="bash" copy
 catkin build 
+```
+
+**And the other way around:**
+
+1. Remove the build and devel folder:
+```bash filename="bash" copy
+rm -rf build devel
+```
+2. Compile the package using the `catkin_make` command:
+```bash filename="bash" copy
+catkin_make
 ```
 
 ## ROS Parameter Server
@@ -482,12 +509,12 @@ rosparam get [param_name]
 ```bash filename="bash"
 rosparam set [param_name] [value]
 ```
-
+---
 ### Exercise [5 min]
 
 Now try to create a new parameter called `Hermonie` that contains the following value and check the value:
 
-`"Now, if you two don't mind, I'm going to bed before either of you come up with another clever idea to get us killed or worse… expelled!"`
+<GlowingText>`"Now, if you two don't mind, I'm going to bed before either of you come up with another clever idea to get us killed or worse… expelled!"`</GlowingText>
 
 Tip: If you encounter following error:
 

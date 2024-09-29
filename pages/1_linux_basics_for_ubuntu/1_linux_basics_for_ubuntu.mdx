@@ -1,4 +1,5 @@
 import Image from 'next/image'; // Falls du Next.js verwendest
+import GlowingText from '/components/GlowingText';
 
 <h1 style={{ color: 'green', fontSize: '2em', fontWeight: 'bold' }}>Linux Basics for Ubuntu</h1>
 
@@ -6,7 +7,7 @@ import Image from 'next/image'; // Falls du Next.js verwendest
 
 <div style={{ display: 'flex', justifyContent: 'center' }}>
 <Image
-  src="/assets/file_system.png" 
+  src="/assets/FileSystem.png" 
   alt="File System" 
   width={600} 
   height={300} 
@@ -26,6 +27,47 @@ Estimated time to completion: 0.5 hours
 - Scripting
 - Piping and Grabbing
 
+## The Linux File System
+
+- **`/`**: The root directory, the highest level of the file system where all files and directories are stored.
+
+- **`/bin`**: Contains binary executables (e.g., `cat`, `mkdir`, `ls`). Named for **BIN**aries.
+
+- **`/boot`**: Stores files necessary for booting the system. Avoid modifying this directory.
+
+- **`/dev`**: Contains device files for connected hardware (e.g., USBs, hard drives).
+
+- **`/etc`**: Holds configuration files (e.g., `/etc/shadow`, `/etc/passwd`). Exercise caution here.
+
+- **`/home`**: User directories (e.g., `/Downloads`, `/Documents`). The root user has a separate home.
+
+- **`/lib`**: Contains application libraries. Managed by the package manager; do not alter.
+
+- **`/media`**: Temporary mount points for removable media (e.g., USB drives).
+
+- **`/mnt`**: Legacy directory for mounting devices, mainly unused now.
+
+- **`/opt`**: Stores third-party software packages not installed via the package manager.
+
+- **`/proc`**: Contains information about running processes and system resources (CPU, RAM).
+
+- **`/root`**: Home directory for the root account, structured differently from standard user directories.
+
+- **`/run`**: Holds temporary files using RAM; files disappear after a reboot.
+
+- **`/sbin`**: Similar to `/bin`, but contains binaries for system administration.
+
+- **`/sys`**: Contains information about devices and drivers, managed automatically.
+
+- **`/srv`**: Holds data for services specific to the distribution, also managed automatically.
+
+- **`/tmp`**: Stores temporary files created by users and applications; deleted on reboot.
+
+- **`/usr`**: Contains shared libraries, binaries, and documentation for installed programs.
+
+- **`/var`**: Contains variable files that change frequently (e.g., log files, spool files).
+
+
 ## Basic terminal interaction:
 
 The `terminal` - also called shell or console - is a tool that allows you to issue commands to the computer. Under Ubuntu, for example in **Linux**, you open the terminal with the key combination `[Ctrl] + [Alt] + [t]`.
@@ -39,17 +81,14 @@ The first imortant command is `cd` to `change directory`. This is a way of navig
 ```bash filename="bash" copy
 cd /tmp
 ```
-
 2. Navigate one folder back by combining `cd` with `..`.
 ```bash filename="bash" copy
 cd ..
 ```
-
 3. To list the folders in the current directory use `ls` for `list`.
 ```bash filename="bash" copy
 ls
 ```
-
 4. List the folders more detailed with `ls -la`. The `-la` flag stands for `list all` and `long format`. Or use `ll` as a shortcut.
 ```bash filename="bash" copy
 ls -la
@@ -58,7 +97,6 @@ or
 ```bash filename="bash" copy 
 ll
 ```
-
 5. Navigate to the `home directory` with `cd ~` or just `cd`.
 ```bash filename="bash" copy
 cd
@@ -67,7 +105,7 @@ or  `~` means home directory.
 ```bash filename="bash" copy
 cd ~
 ```
-Print text on terminal with `echo`.
+6. Print text on terminal with `echo`.
 ```bash filename="bash" copy
 echo "You are a wizard, Harry!"
 ```
@@ -109,20 +147,22 @@ Do not despair if you have no idea how to master the dark arts of the linux shel
 **Shell:**
 As we already know, the terminal is aka. shell. Using the shell, you can send commands to interact with your computer and hence receive and store data, process information, and perform various other simple or complex tasks.
 
-Let's try some commands in our shell:
+### Let's try some commands in our shell:
 
-Let´s print the current date and time:
+1. Let's print the current date and time:
 ```bash filename="bash" copy
 date
 ```
 
-```bash filename="output" 
+```ansi filename="output" 
 Sat 14 Sep 2024 01:35:12 PM CEST
 ```
-Try to display the calendar of the current month:
+---
+2. Try to display the calendar of the current month:
 ```bash filename="bash" copy
 cal
 ```
+
 ```bash filename="output"
    September 2024
 Su Mo Tu We Th Fr Sa
@@ -132,22 +172,23 @@ Su Mo Tu We Th Fr Sa
 22 23 24 25 26 27 28
 29 30
 ```
-Print the current working directory:
+---
+3. Print the current working directory:
 ```bash filename="bash" copy
 pwd
 ```
 ```bash filename="output"	
 /home/username
 ```
-Make the terminal print a message in green:
+---
+4. Make the terminal print a message in <span style={{ color: 'green' }}>green</span>:
 ```bash filename="bash" copy
 echo -e "\e[32mIt worked\e[0m"
 ```
 output: <span style={{ color: 'green' }}>It worked</span>
 
-
-
-So what have we just achieved?
+---
+### So what have we just achieved?
 
 - We entered commands to interact with our computer
 - We retrieved data (date, cal, pwd)
@@ -170,13 +211,13 @@ Almost any software or operating system has some kind of built-in help to assist
 
 ### Tab completion on the Shell
 
-First make sure to be in the home directory by typing `cd` and pressing enter.
+1. First make sure to be in the home directory by typing `cd` and pressing enter.
 
 ```bash filename="bash" copy 
 cd
 ```
-
-Commands can be auto-completed inside the Shell. For this, simply type the name of the first characters of the command followed by the tabulator key.
+Commands can be auto-completed inside the Shell.<br/>
+2. For this, simply type the name of the first characters of the command followed by the tabulator key.
 
 ```python filename="bash"
 cd [TAB TAB]
@@ -185,7 +226,7 @@ Now a list of all folders you can change directory `cd` to will be displayed.
 ```bash filename="output"	
 .ros/      .vim/      catkin_ws/
 ```
-Now try
+3. Now try
 ```bash filename="bash" copy	
 cd cat[TAB]
 ```
@@ -194,11 +235,12 @@ As you can see, the command is auto-completed which saves you time and prevents 
 ```bash filename="output"
 fhtw_user@razerblade:~/catkin_ws$
 ```
-
+---
 ### Command options -h --help
 
 Most commands come with argument options which can be passed after the command, -h and --help are two of them.
 
+1. Let's try to get help for the `cat` command. Remember with `cat` you can look into textbased files.
 ```bash filename="bash" copy
 cat -h
 ```
@@ -208,7 +250,7 @@ As you can see `-h` does not work with `cat` but it suggests that `--help` does.
 cat: invalid option -- 'h'
 Try 'cat --help' for more information.
 ```
-
+2. Let's try `--help` with the `cat` command.
 ```bash filename="bash" copy
 cat --help
 ```
@@ -240,28 +282,32 @@ GNU coreutils online help: <https://www.gnu.org/software/coreutils/>
 Report cat translation bugs to <https://translationproject.org/team/>
 Full documentation at: <https://www.gnu.org/software/coreutils/cat>
 or available locally via: info '(coreutils) cat invocation'
-```
 
+---
 ### Manual Pages
 
-Many commands come with manual pages. You can scroll through those by putting man as a prefix to your command.
+Many commands come with manual pages. You can scroll through those by putting man as a prefix to your command. But in this Docker container is is not available.
 
-```bash filename
+```bash filename="bash"
 man cat
 ```
 
-*"And as our great headmaster Albus Dumbledore stated: "Help will always be given at Hogwarts, Harry, to those who ask for it."*
+And as our great headmaster Albus Dumbledore stated 🧙🏼‍♂️: <GlowingText>*"Help will always be given at Hogwarts, Harry, to those who ask for it."*</GlowingText>
 
-The first point of interest is the public library in the third floor.
+The first point of interest is the public library in the fourth floor 📖.
 
 To acompany you with your search in the public library google please see this [cheatsheet](https://static.semrush.com/blog/uploads/files/39/12/39121580a18160d3587274faed6323e2.pdf) that will help you with your search.
 
+---
 ### Summary
 We have learned that:
-
-- BASH is a command languge interpreter. The default interpreter for Ubuntu is BASH.
+- With `cd` we can change directories.
+- `ls` lists the files and folders in the current directory.
+- `pwd` prints the current working directory.
+- `echo` prints text to the terminal.
+- `BASH` is a command languge interpreter. The default interpreter for Ubuntu is BASH.
 - kill a command by pressing `[Ctrl] + [c]`
-- SHELL is a macro (command) proccessor which allows for interactive and non-interactive execution.
+- `SHELL` is a macro (command) proccessor which allows for interactive and non-interactive execution.
 - Getting Help: Most commands come with the possible arguments `-h`, `--help`, and or have a `man-page`
 
 ## The Filesystem
@@ -290,43 +336,56 @@ To open a new tab from inside an existing terminal press:<br/>
 `[CTRL] + [SHIFT] + [T]`
 
 
-# Bash Commands
+## Bash Commands
 
 Here are some basic Bash commands you can run in a terminal:
 
-- **`cd /tmp`**: Changes the directory to `/tmp`.
-```bash copy
+1. `cd /tmp`: Changes the directory to `/tmp`.
+```bash filename="bash" copy
 cd /tmp
 ```
-
-- **`touch first_file`**: Creates an empty file named `first_file`.
-```bash copy
+2. `touch first_file`: Creates an empty file named `first_file`.
+```bash filename="bash" copy
 touch first_file
 ```
-
-- **`pwd`**: Prints the current working directory.
-```bash copy
-pwd
+3. `ls`: Lists the files and folders in the current directory.
+```bash filename="bash" copy
+ls
 ```
-
-- **`mkdir first-folder`**: Creates a directory named `first-folder`.
-```bash copy
+You should now see your created file.
+```bash filename="output"
+first_file
+```
+4. `mkdir first-folder`: Creates a directory named `first-folder`.
+```bash filename="bash" copy
 mkdir first-folder
 ```
-
-- **`touch first-folder/second_file`**: Creates an empty file named `second_file` inside the `first-folder` directory.
-```bash copy
+5. `ls`: Lists the files and folders in the current directory.
+```bash filename="bash" copy
+ls
+```
+6. `touch first-folder/second_file`: Creates an empty file named `second_file` inside the `first-folder` directory.
+```bash filename="bash" copy
 touch first-folder/second_file
 ```
-
-- **`ls first-folder/`**: Lists the files inside the `first-folder` directory.
-```bash copy
+7. `ls first-folder/`: Lists the files inside the `first-folder` directory.
+```bash filename="bash" copy
 ls first-folder/
 ```
+```bash filename="output"
+second_file
+```
 
-- **`rm -rf first-folder first_file`**: Removes the `first-folder` directory and the `first_file` file (files deleted with `rm` cannot be restored).
-```bash copy
+8. `rm -rf first-folder first_file`: Removes the `first-folder` directory and the `first_file` file (files deleted with `rm` cannot be restored).
+- `rm` stands for remove
+- `-r` for recursive (delete all files and folders inside the folder)
+- `-f` for force (do not ask for confirmation)
+```bash filename="bash" copy
 rm -rf first-folder first_file
+```
+9. Now when you list the files and folders in the current directory, you should see that the `first-folder` directory and the `first_file` file are gone.
+```bash filename="bash" copy
+ls
 ```
 
 ## Scripting
@@ -404,6 +463,7 @@ exit 0
   height={300} 
 />
 </div>
+---
 
 ### Run Scripts
 
@@ -435,6 +495,11 @@ ls
 ```bash filename="bash" copy
 bash first_script.sh
 ```
+or
+```bash filename="bash" copy
+./first_script.sh
+```
+
 ```bash filename="bash"
 output:
 Creating folder /tmp/fhtw
@@ -466,12 +531,12 @@ Here's what we did:
 - We used the `-P` flag to enable Perl-compatible regular expressions.
 - We used the regular expression `'(\d{1,3}\.){3}\d{1,3}'` to match an IP address.
 
-
+---
 ### Grep
 
 Grep lets you search for strings in files. The basic syntax is:
 
-```bash filename="bash"
+```bash filename="bash" copy
 grep "search_string" "file_name"
 ```
 
@@ -517,7 +582,7 @@ htop
 To exit `htop` press `q` or like in the terminal to stop any porcess `ctrl + c`.
 
 
-We have learned that:
+### We have learned that:
 
 - BASH is a command language interpreter. The default interpreter for Ubuntu is BASH.
 - SHELL is a macro (command) processor which allows for interactive and non-interactive execution.
@@ -527,9 +592,10 @@ We have learned that:
 - We can create variables in scripts
 - Bash scripts must have executable rights
 - We can use variables using the $ operator
-To use the output of a command as a variable, we must use 
-```bash
-MY_VAR="$([command])"
-```
+- To use the output of a command as a variable, we must use `MY_VAR="$(<command>)"`
+
+
+
 - We should return an int between 0 - 254 from our script depending on the final state of our script using exit
 - We can use the `htop` command to monitor system resources
+

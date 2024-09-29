@@ -1,10 +1,10 @@
+import React from 'react';
 import Image from 'next/image'; // Falls du Next.js verwendest
+import GlowingText from '/components/GlowingText';
 
-# ROS Basics in Python
+<h1 style={{ color: 'green', fontSize: '3em', fontWeight: 'bold' }}>Topics & Messages in ROS</h1>
 
-## Unit 4: Topics and Msgs
-
-**Summary**  
+## Summary 
 Estimated time to completion: 1'5 hours
 
 **Simulated robot:** Turtlebot 3 Burger
@@ -89,25 +89,29 @@ roscd && cd ..
 ```bash filename="bash" copy
 catkin_make
 ```
-3. Source the workspace & check if the package is in the workspace:
+3. Source the workspace:
 ```bash filename="bash" copy
-source devel/setup.bash && rospack profile
+source devel/setup.bash
+```
+4. Check if the package is in the workspace: 
+```bash filename="bash" copy 
+rospack profile
 ```
 
 ### Running the Publisher
 
-1. Execute the following lines in `2 different terminals` with `[ctrl + b] and [Shift + 5]`:
+Execute the following lines in `2 different terminals`:
 
-Start the `roscore`:
+1. In one Terminal start the `roscore`:
 ```bash filename="bash" copy
 roscore
 ```
-Run the publisher:
+2. Then with `[ctrl + b] and [Shift + 5]` open a new terminal and run the publisher:
 ```bash filename="bash" copy
 rosrun first_pkg points_publisher.py
 ```
 
-Nothing happening? Well... that's not actually true! We just created a topic named `/points`, and published through it as an integer that increases indefinitely. Let's check this out.
+**Nothing happening?** Well... that's not actually true! We just created a topic named `/points`, and published through it as an integer that increases indefinitely. Let's check this out.
 
 A topic is like a pipe. Nodes use topics to publish information for other nodes so that they can communicate. You can find out, at any time, the number of topics in the system by doing a `rostopic list`. You can also check for a specific topic.
 
@@ -181,17 +185,19 @@ Paste the following code into `points_subscriber.py` file:
 import rospy
 from std_msgs.msg import String
 
-def callback(msg):                                    # Define a function called 'callback' that receives a parameter
-                                                      # named 'msg'
+# Define a function called 'callback' that receives a parameter named 'msg'
+def callback(msg):
     string_with_points = msg.data
-    rospy.loginfo("{} Dumbledore shouted".format(string_with_points)) # Print the 'msg'
-
-rospy.init_node('counter_subscriber')                   # Initiate a Node called 'topic_subscriber'
-
-sub = rospy.Subscriber('/points', String, callback)   # Create a Subscriber object that will listen to the /points
-                                                      # topic and will call the 'callback' function each time it receives
-                                                      # a String from the topic
-rospy.spin()                                          # Create a loop that will keep the program in execution
+    # Print the 'msg'
+    rospy.loginfo("{} Dumbledore shouted".format(string_with_points))
+# Initiate a Node called 'topic_subscriber'
+rospy.init_node('counter_subscriber')
+# Create a Subscriber object that will listen to the /points
+# topic and will call the 'callback' function each time it receives
+# a String from the topic
+sub = rospy.Subscriber('/points', String, callback)
+# Create a loop that will keep the program in execution
+rospy.spin()
 ```
 
 ### Execute the Subscriber:
@@ -256,7 +262,7 @@ string data
 ```bash filename="bash" copy
 roscd std_msgs/msg/
 ```
-
+---
 ### Exercise [30 min]
 
 - Create a launch file `move_turtlebot.launch` that starts the `homework_simulation.launch`.
@@ -293,7 +299,7 @@ roscd first_pkg/launch && touch move_turtlebot.launch
 2. Paste the following code into the `move_turtlebot.launch` file:
 ```xml filename="xml" showLineNumbers copy
 <launch>
-    <include file="$(find first_pkg)/launch/homework_simulation.launch"/>
+  <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_world.launch" />
     <node pkg="first_pkg" type="move_turtlebot.py" name="move_turtle_node" output="screen" />
 </launch>
 ```
@@ -348,7 +354,9 @@ roslaunch first_pkg move_turtlebot.launch
 - Visualize connections between different nodes of your system
 - Basic use of RViz debugging tool
 
-One of the most difficult but important aspects of robotics is: *knowing how to translate your ideas and knowledge into real-world projects*. Usually in robotics projects: *nothing works like in theory*. Reality is much more complex and therefore you need tools to figure out what is going on and where the problem is.
+One of the most difficult but important aspects of robotics is: `knowing how to translate your ideas and knowledge into real-world projects`.
+
+Usually in robotics projects: *nothing works like in theory*. Reality is much more complex and therefore you need tools to figure out what is going on and where the problem is.
 For this reason, debugging and visualization tools are essential and already implemented in ROS, especially when working with complex data formats like
 *images, laser scans, point clouds* or *kinematic data*.
 
@@ -369,8 +377,8 @@ Examples are shown in the following figure:
 />
 </div>
 
-## ROS Debugging Messages and RQT-Console
 
+## ROS Debugging Messages and RQT-Console
 We have used Python's `print()` and ROS's `rospy.loginfo()` so far throughout this course without discussing the benefits/downsides.
 
 - `print()`: Follows the Dark Lord into battle. If you use `print`, it is close to impossible to store the information you print to the ROS framework.
@@ -397,11 +405,12 @@ logging is provided in the rospy API
 The ROS logging system contains *five* levels. Each level includes the deeper levels. For example, if we use the 
 *Warn* level for our node, all logs from *Warn, Error, and Fatal* will be printed.
 
+---
 ### Example
 
 Let's test the different logger levels.
 
-Create a new node called `logger_test.py` in the `first_pkg`:
+1. Create a new node called `logger_test.py` in the `first_pkg`:
 
 ```bash filename="bash" copy
 roscd first_pkg/src && touch logger_test.py && chmod +x logger_test.py
@@ -413,6 +422,7 @@ roscd first_pkg/src && touch logger_test.py && chmod +x logger_test.py
 #!/usr/bin/python3
 
 import rospy
+import sys
 import time
 
 # Options: DEBUG, INFO, WARN, ERROR, FATAL
@@ -431,8 +441,26 @@ while not rospy.is_shutdown():
     rospy.logfatal("END")
 ```
 
-**WARNING:** cannot load logging configuration file, logging is disabled
+2. Start a `roscore` in a terminal if it is not already running:
+```bash filename="bash" copy
+roscore
+```
+3. Make a new Terminal with `[ctrl + b] and [Shift + 5]` and start the `logger_test.py` node in a new terminal:
+```bash filename="bash" copy
+rosrun first_pkg logger_test.py
+```
+The output will look something like this:
 
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/LogInfo.png" 
+  alt="File System" 
+  width={800} 
+  height={300} 
+/>
+</div>
+
+---
 ### Exercise [5 min]
 
 Adapt the log level of the `logger_test.py` and inspect the output of the topic `/rosout` using `rostopic echo`.
@@ -443,6 +471,7 @@ Adapt the log level of the `logger_test.py` and inspect the output of the topic 
 
 import rospy
 import sys
+import time
 
 log_dict = {
     "DEBUG": rospy.DEBUG,
@@ -452,12 +481,14 @@ log_dict = {
     "FATAL": rospy.FATAL,
 }
 
-log_level = sys.argv[1]  # First arg is path to file
-if log_dict[log_level]:
-    LOGGER = log_dict[log_level]
+# Check if a log level argument was provided and if it's valid
+if len(sys.argv) > 1 and sys.argv[1] in log_dict:
+    log_level = sys.argv[1]  # Use the provided valid log level
+    LOGGER = log_dict[log_level]  # Get the corresponding ROS log level constant
 else:
-    LOGGER = rospy.DEBUG
-
+    log_level = "DEBUG"  # Default to "DEBUG" if no valid argument is provided
+    LOGGER = rospy.DEBUG  # Set the log level to rospy.DEBUG as a fallback
+ 
 rospy.init_node('logger_test', log_level=LOGGER)    # Options: DEBUG, INFO, WARN, ERROR, FATAL
 rate = rospy.Rate(0.5)
 
@@ -475,9 +506,9 @@ while not rospy.is_shutdown():
 
 2. Add the `logger_test.py` to the `move_turtlebot.launch` file.
 
-```xml filename="xml" showLineNumbers copy	
+```xml filename="xml" showLineNumbers copy
 <launch>
-    <include file="$(find first_pkg)/launch/homework_simulation.launch"/>
+    <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_world.launch" />
     <node pkg="first_pkg" type="move_turtlebot.py" name="move_turtle_node" output="screen" />
     <node pkg="first_pkg" type="logger_test.py" name="logger_test_node" output="screen" />
 </launch>
@@ -488,7 +519,7 @@ while not rospy.is_shutdown():
 roslaunch first_pkg move_turtlebot.launch
 ```
 
-4. Inspect the topic `/rosout` again starting the `move_turtlebot.launch` file.
+4. Open another Terminal with `[ctrl + b] and [Shift + 2]`Inspect the topic `/rosout` again starting the `move_turtlebot.launch` file.
 ```bash filename="bash" copy  
 rostopic echo /rosout
 ```
@@ -608,7 +639,7 @@ In the figure, you are presented with all of the currently running nodes, connec
 
 And here you have it. The HollyMolly! The Firebolt broom, the Cloak of Invisibility! The most important tool for ROS debugging....
 
-### RVIZ
+<GlowingText style={{ fontSize: '3rem' }}>RViz</GlowingText>
 
 RVIZ is a tool that allows you to visualize images, PointClouds, 2D lasers, kinematic transformations, RobotModels, IMU readings, RGBD PointClouds, etc. You can even define your own markers. This is one of the reasons why ROS has been so widely accepted. Before RVIZ, it was really difficult to know what the robot was perceiving. And that is the main concept:
 
@@ -618,9 +649,14 @@ RVIZ is a representation of what is published in the topics, by the simulation o
 
 RVIZ is a really complex tool and it would take you a whole course just to master it. Here, you will get a glimpse of what it can give you.
 
-**Example**
+### Example
 
-1. Start RVIZ:
+1. Make sure the `roscore` is running in a terminal:
+```bash filename="bash" copy
+roscore
+```
+
+2. Start RVIZ in a new terminal `[ctrl + b] and [Shift + 5]`:
 
 ```bash filename="bash" copy
 rosrun rviz rviz
@@ -642,6 +678,7 @@ Add stuff that should be displayed as visualized in the video.
 </div>
 As shown in the figure, we can save the just created display configuration to a specific file, so we can load it using a launch file or the command line with `rosrun rviz rviz -d <path-to-config.rviz>`.
 
+---
 ### Homework [5 Points]
 
 - Adapt the `move_turtlebot.launch` file so that it starts RVIZ with the following topics visualized:

@@ -1,10 +1,9 @@
-import LaTeX from '../../components/LaTeX';
 import Image from 'next/image'; // Falls du Next.js verwendest
 
 
-# Unit 5: Mapping & Navigation
+<h1 style={{ color: 'green', fontSize: '3em', fontWeight: 'bold' }}>Mapping & Navigation</h1>
 
-**Summary**  
+## Summary
 Estimated time to completion: 2 hours
 
 **Simulated robot:** Turtlebot 3 Burger
@@ -392,19 +391,50 @@ $
 We will use the existing TurtleBot3 simulation in **Gazebo** provided by [ROBOTIS](https://emanual.robotis.com/docs/en/platform/turtlebot3/overview/). Execute the following commands in separate terminals:
 
 
-Starts the simulation in Gazebo and spawns the robot in the world
+1. Start the simulation in Gazebo and spawns the robot in the world
 ```bash filename="bash" copy
 roslaunch turtlebot3_gazebo turtlebot3_world.launch 
 ```
-Handles coordinate transformations for the robot
+
+2. Starts the gmapping-based SLAM for the TurtleBot3
+We use a preconfiguerd launch file wich inclues a preconfigured rviz file. However you can also click together your own vizualization in rviz.
+
 ```bash filename="bash" copy
-roslaunch turtlebot3_bringup turtlebot3_remote.launch
-```
-Starts the gmapping-based SLAM for the TurtleBot3
-```bash filename="bash" copy
-roslaunch turtlebot3_slam turtlebot3_gmapping.launch 
+roslaunch turtlebot3_slam turtlebot3_slam.launch slam_methods:=gmapping
 ```
 
+3. Now drive the robot around to create the map. To enable teleoperation, you can run the following command:
+
+```bash filename="bash" copy
+ roslaunch turtlebot3_teleop turtlebot3_teleop_key.launch
+```
+
+Alternatively, you could use **rqt_robot_steering** for control.
+
+```bash filename="bash" copy
+rosrun rqt_robot_steering rqt_robot_steering
+```
+
+4. Let's save our map in a folder named `maps` inside our package `first_pkg` with the name `my_map`. Make a foder called `maps` in the `first_pkg` package:
+```bash filename="bash" copy
+mkdir -p $(rospack find first_pkg)/maps
+```
+
+5. Move to the home directory:
+```bash filename="bash" copy	
+cd 
+```
+6. Give the user permission to the folders:
+```bash filename="bash" copy
+sudo chown -R  fhtw_user catkin_ws
+```
+
+
+
+```bash filename="bash" copy
+rosrun map_server map_saver -f "$(rospack find first_pkg)/maps/my_map"
+```
+---
 ### Exercise [5 min]
 
 1. Move the robot using any teleoperation method we've discussed so far.
@@ -416,15 +446,9 @@ roslaunch turtlebot3_slam turtlebot3_gmapping.launch
    - Laser scan data
    - The map created by gmapping
 
-### Exercise Solution
 
-To enable teleoperation, you can run the following command:
 
-```bash
-rosrun teleop_twist_keyboard teleop_twist_keyboard.py
-```
-
-Alternatively, you could use **rqt_robot_steering** for control. Refer to the following figures for the desired output in RVIz.
+Refer to the following figures for the desired output in RVIz.
 
 <div style={{ display: 'flex', justifyContent: 'center' }}>
 <Image
@@ -461,18 +485,16 @@ The syntax is:
 ```bash filename="bash"
 rosrun map_server map_saver [--occ <threshold_occupied>] [--free <threshold_free>] [-f <mapname>] map:=/your/costmap/topic
 ```
-
-Let's save our map in a folder named `maps` inside our package `first_pkg` with the name `unit3_map`:
-
-```bash filename="bash" copy
-rosrun map_server map_saver -f "$(rospack find first_pkg)/maps/unit3_map"
-```
-
+---
 ### Exercise [1 min]
 
 - Inspect the generated YAML file.
 
 ### Exercise Solution
+
+```bash filename="bash" copy
+cat $(rospack find first_pkg)/maps/my_map.yaml
+```
 
 ```yaml
 image: /home/username/catkin_ws/src/JupyterROS/Basic_ROSpy/first_pkg/maps/unit3_map.pgm
@@ -518,22 +540,55 @@ The particle filter is the [default localization algorithm](http://wiki.ros.org/
 
 We will now use the **AMCL** particle filter with the map we created. Start everything except for the mapping:
 
-
-Starts simulation in Gazebo with the robot inside
+1. Starts simulation in Gazebo with the robot inside
 ```bash filename="bash" copy 
 roslaunch turtlebot3_gazebo turtlebot3_world.launch
 ```
-Starts coordinate transformations for the robotHandles coordinate transformations for the robot
-```bash filename="bash" copy  
-roslaunch turtlebot3_bringup turtlebot3_remote.launch  
+
+2. Starts the navigation stack with the created map passed in.
+```bash filename="bash" copy
+roslaunch turtlebot3_navigation turtlebot3_navigation.launch map_file:=$(rospack find first_pkg)/maps/my_map.yaml
 ```
 
+3. At the beginning the robot doesn't know where it is.
+You can help the robot by setting an initial pose estimate in RViz.
+This is done by clicking the "2D Pose Estimate" button and dragging the arrow where the robot actually is.
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/PoseEstimate.png" 
+  alt="File System" 
+  width={800} 
+  height={300} 
+/>
+</div>
+
+4. Now the robot will localize itself.
+Now let the robot do the work for you.
+You can use the 2D Nav Goal button in RViz to set a goal for the robot.
+The robot will move to the goal and localize itself better with each resampling step.
+
+<div style={{ display: 'flex', justifyContent: 'center' }}>
+<Image
+  src="/assets/2DNavGoal.png" 
+  alt="File System" 
+  width={800} 
+  height={300} 
+/>
+</div>
+
+
+## AMCL Launchfile
+The AMCL Demo was very TurtleBot specific. However you can configure everything by yourself:
+
+1. Make a `rviz` folder in the first_pkg package:
 ```bash filename="bash" copy
-roslaunch turtlebot3_teleop turtlebot3_teleop_key.launch
+mkdir -p $(rospack find first_pkg)/rviz
 ```
-Launch Rviz   
+
+2. Create a new file called `rviz_config.rviz` in the `rviz` folder:
 ```bash filename="bash" copy
-rviz 
+touch $(rospack find first_pkg)/rviz/rviz_config.rviz
 ```
 
 In **RViz**, display the following:
@@ -541,22 +596,127 @@ In **RViz**, display the following:
 - Robot Model
 - Laser Scan
 - TFs (without names)
+- map
+- PoseArray
 
-Now start the map server and localization:
 
+2. Make a new launchfile called `amcl.launch` in the `first_pkg` package:
 ```bash filename="bash" copy
-roslaunch turtlebot3_navigation amcl.launch
+touch $(rospack find first_pkg)/launch/amcl.launch
 ```
 
-Execute from the maps folder inside `first_pkg`
-```bash filename="bash" copy
-rosrun map_server map_server unit3_map.yaml
-```
-### Exercise [5 min]
+3. Paste the following code into the launch file:
+```xml filename="xml" showLineNumbers copy
+<launch>
+    <!-- Start Gazebo with Turtlebot3 -->
+    <!--launch world-->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find turtlebot3_gazebo)/worlds/turtlebot3_world.world"/>
+        <arg name="paused" value="false" />
+        <arg name="use_sim_time" value="true" />
+        <arg name="gui" value="false" />
+        </include>
 
-- Add the map topic in RViz.
-- Add the PoseArray topic in RViz.
-- Steer the robot in the map until it localizes itself. With each resampling step, the robot's pose will improve.
+    <!--find robot description-->
+    <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_burger.urdf.xacro" />
+
+    <!--spawn robot-->
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model turtlebot3_burger -x -2 -y 0 -z 0 -param robot_description" />
+
+    <!--launch remote-->
+    <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch"/>
+    
+    <!--start map server-->
+    <node name="map_server" pkg="map_server" type="map_server" args="$(find first_pkg)/maps/my_map.yaml"/>
+    
+    <!-- Include Turtlebot movebase -->
+    <include file = "$(find turtlebot3_navigation)/launch/move_base.launch" />
+
+    <!-- Start RViz with a specific config -->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find first_pkg)/rviz/rviz_config.rviz" />
+
+</launch>
+```
+
+3. Now launch the file:
+```bash filename="bash" copy
+roslaunch first_pkg amcl.launch
+```
+If you choose Fixed Frame: `base_footprint` in RViz, you will see the robot's pose.
+You may have noticed that the map is somewehere else.
+That's becasue the robot doesn't know where it is and there is `No transform from [map] to [base_footprint]`.
+You could calculate that with a fixed Transformation, but there is a better way. We will now use the **AMCL** algorithm to localize the robot.
+So add the `AMCL` node to the `amcl.launch` file:
+
+```xml filename="xml" showLineNumbers copy
+<launch>
+    <!-- Start Gazebo with Turtlebot3 -->
+    <!--launch world-->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(find turtlebot3_gazebo)/worlds/turtlebot3_world.world"/>
+        <arg name="paused" value="false" />
+        <arg name="use_sim_time" value="true" />
+        <arg name="gui" value="false" />
+        </include>
+
+    <!--find robot description-->
+    <param name="robot_description" command="$(find xacro)/xacro --inorder $(find turtlebot3_description)/urdf/turtlebot3_burger.urdf.xacro" />
+
+    <!--spawn robot-->
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-urdf -model turtlebot3_burger -x -2 -y 0 -z 0 -param robot_description" />
+
+    <!--launch remote-->
+    <include file="$(find turtlebot3_bringup)/launch/turtlebot3_remote.launch"/>
+    
+    <!--start map server-->
+    <node name="map_server" pkg="map_server" type="map_server" args="$(find first_pkg)/maps/my_map.yaml"/>
+    
+    <!-- Include Turtlebot movebase -->
+    <include file = "$(find turtlebot3_navigation)/launch/move_base.launch" />
+
+    <!-- Start RViz with a specific config -->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find first_pkg)/rviz/rviz_config.rviz" />
+
+     <!-- AMCL Configuration -->
+    <node pkg="amcl" type="amcl" name="my_amcl_node">
+        
+      <param name="min_particles"             value="200"/>
+      <param name="max_particles"             value="1000"/>
+      <param name="kld_err"                   value="0.02"/>
+      <param name="update_min_d"              value="0.20"/>
+      <param name="update_min_a"              value="0.20"/>
+      <param name="resample_interval"         value="1"/>
+      <param name="transform_tolerance"       value="0.5"/>
+      <param name="recovery_alpha_slow"       value="0.00"/>
+      <param name="recovery_alpha_fast"       value="0.00"/>
+      <param name="initial_pose_x"            value="-1.5"/>
+      <param name="initial_pose_y"            value="0.5"/>
+      <param name="initial_pose_a"            value="0"/>
+      <param name="gui_publish_rate"          value="50.0"/>
+        
+      <remap from="scan"                      to="scan"/>
+      <param name="laser_max_range"           value="3.5"/>
+      <param name="laser_max_beams"           value="180"/>
+      <param name="laser_z_hit"               value="0.5"/>
+      <param name="laser_z_short"             value="0.05"/>
+      <param name="laser_z_max"               value="0.05"/>
+      <param name="laser_z_rand"              value="0.5"/>
+      <param name="laser_sigma_hit"           value="0.2"/>
+      <param name="laser_lambda_short"        value="0.1"/>
+      <param name="laser_likelihood_max_dist" value="2.0"/>
+      <param name="laser_model_type"          value="likelihood_field"/>
+        
+      <param name="odom_model_type"           value="diff"/>
+      <param name="odom_alphal"               value="0.1"/>
+      <param name="odom_alpha2"               value="0.1"/>
+      <param name="odom_alpha3"               value="0.1"/>
+      <param name="odom_alpha4"               value="0.1"/>
+      <param name="odom_frame_id"             value="odom"/>
+      <param name="base_frame_id"             value="base_footprint"/>
+    </node>
+</launch>
+```
+Now let the robot drive to a goal. The robot will move to the goal and localize itself better with each resampling step.
 
 ### Exercise Solution
 
@@ -576,6 +736,315 @@ rosrun map_server map_server unit3_map.yaml
 </div>
 
 **Visualization of Advanced Monte Carlo Localization**
+
+If you you can't manage to set up rviz correctly, you can copy the content premade rviz_config file below:
+
+```yaml filename="yaml" showLineNumbers copy
+Panels:
+  - Class: rviz/Displays
+    Help Height: 78
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+      Splitter Ratio: 0.5
+    Tree Height: 354
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Expanded:
+      - /2D Pose Estimate1
+      - /2D Nav Goal1
+      - /Publish Point1
+    Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
+  - Class: rviz/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: rviz/Time
+    Name: Time
+    SyncMode: 0
+    SyncSource: LaserScan
+Preferences:
+  PromptSaveOnExit: true
+Toolbars:
+  toolButtonStyle: 2
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.5
+      Cell Size: 1
+      Class: rviz/Grid
+      Color: 160; 160; 164
+      Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 10
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: true
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+        base_footprint:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        base_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        base_scan:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        caster_back_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        imu_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        wheel_left_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        wheel_right_link:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+      Name: RobotModel
+      Robot Description: robot_description
+      TF Prefix: ""
+      Update Interval: 0
+      Value: true
+      Visual Enabled: true
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/LaserScan
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Min Color: 0; 0; 0
+      Name: LaserScan
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.009999999776482582
+      Style: Flat Squares
+      Topic: /scan
+      Unreliable: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Alpha: 0.699999988079071
+      Class: rviz/Map
+      Color Scheme: map
+      Draw Behind: false
+      Enabled: true
+      Name: Map
+      Topic: /map
+      Unreliable: false
+      Use Timestamp: false
+      Value: true
+    - Alpha: 1
+      Arrow Length: 0.30000001192092896
+      Axes Length: 0.30000001192092896
+      Axes Radius: 0.009999999776482582
+      Class: rviz/PoseArray
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.07000000029802322
+      Head Radius: 0.029999999329447746
+      Name: PoseArray
+      Queue Size: 10
+      Shaft Length: 0.23000000417232513
+      Shaft Radius: 0.009999999776482582
+      Shape: Arrow (Flat)
+      Topic: /particlecloud
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz/Path
+      Color: 25; 255; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Billboards
+      Line Width: 0.029999999329447746
+      Name: Path
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Queue Size: 10
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
+      Topic: /move_base/NavfnROS/plan
+      Unreliable: false
+      Value: true
+    - Alpha: 0.699999988079071
+      Class: rviz/Map
+      Color Scheme: costmap
+      Draw Behind: false
+      Enabled: true
+      Name: Map
+      Topic: /move_base/local_costmap/costmap
+      Unreliable: false
+      Use Timestamp: false
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): ""
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        base_footprint:
+          Value: true
+        base_link:
+          Value: true
+        base_scan:
+          Value: true
+        caster_back_link:
+          Value: true
+        imu_link:
+          Value: true
+        map:
+          Value: true
+        odom:
+          Value: true
+        wheel_left_link:
+          Value: true
+        wheel_right_link:
+          Value: true
+      Marker Alpha: 1
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: false
+      Tree:
+        map:
+          odom:
+            base_footprint:
+              base_link:
+                base_scan:
+                  {}
+                caster_back_link:
+                  {}
+                imu_link:
+                  {}
+                wheel_left_link:
+                  {}
+                wheel_right_link:
+                  {}
+      Update Interval: 0
+      Value: true
+  Enabled: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Default Light: true
+    Fixed Frame: base_footprint
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+      Hide Inactive Objects: true
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/Measure
+    - Class: rviz/SetInitialPose
+      Theta std deviation: 0.2617993950843811
+      Topic: /initialpose
+      X std deviation: 0.5
+      Y std deviation: 0.5
+    - Class: rviz/SetGoal
+      Topic: /move_base_simple/goal
+    - Class: rviz/PublishPoint
+      Single click: true
+      Topic: /clicked_point
+  Value: true
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 5.630091667175293
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Field of View: 0.7853981852531433
+      Focal Point:
+        X: 0.008444560691714287
+        Y: -0.6175854802131653
+        Z: 1.4026539325714111
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 0.9803973436355591
+      Target Frame: <Fixed Frame>
+      Yaw: 3.7322137355804443
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Height: 645
+  Hide Left Dock: false
+  Hide Right Dock: false
+  QMainWindow State: 000000ff00000000fd000000040000000000000156000001ebfc0200000008fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003b000001eb000000c700fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c000002610000000100000100000001ebfc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003b000001eb000000a000fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000004f40000003efc0100000002fb0000000800540069006d00650100000000000004f40000030700fffffffb0000000800540069006d0065010000000000000450000000000000000000000292000001eb00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Selection:
+    collapsed: false
+  Time:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: false
+  Width: 1268
+  X: 0
+  Y: 0
+```
 
 ### Homework [10 Points]
 
