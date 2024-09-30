@@ -1,4 +1,4 @@
-{
+export default {
   "index": "Welcome",
   "installation": "Installation",
   "1_linux_basics_for_ubuntu": "1. Linux Basics for Ubuntu",
@@ -31,4 +31,4 @@
     "href": "https://www.paypal.me/rosready0?amount=custom",
     "newWindow": true
   }
-}
+};
