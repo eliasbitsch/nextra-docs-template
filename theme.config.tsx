@@ -14,9 +14,9 @@ const config: DocsThemeConfig = {
     // link: 'https://twitter.com',
   },
   // docsRepositoryBase: 'https://github.com/shuding/nextra-docs-template',
-  footer: {
-    text: 'Made by Elias Bitsch',
-  },
+  // footer: {
+  //   text: 'Made by Elias Bitsch',
+  // },
   editLink: {
     text: ' ',
   },
