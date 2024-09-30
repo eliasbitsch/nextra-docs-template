@@ -3,6 +3,8 @@ import { DocsThemeConfig } from 'nextra-theme-docs'
 
 const Logo = React.createElement('span', null, 'ROS-Ready')
 
+const Footer = React.createElement('span', null, '© 2021 ROS-Ready')
+
 const config: DocsThemeConfig = {
   project: {
     // link: 'https://github.com/shuding/nextra-docs-template',
@@ -13,13 +15,13 @@ const config: DocsThemeConfig = {
   },
   // docsRepositoryBase: 'https://github.com/shuding/nextra-docs-template',
   footer: {
-    text: 'Made by Elias Bitsch. Powered by Nextra.',
-  },
-  feedback: {
-    content: ' ', // This disables the feedback button
+    text: ' ',
   },
   editLink: {
-    text: ' ', // This makes the link text a space
+    text: ' ',
+  },
+  feedback: {
+    content: ' ',
   },
 }
 
