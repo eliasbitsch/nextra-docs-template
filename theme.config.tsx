@@ -17,9 +17,9 @@ const config: DocsThemeConfig = {
   // footer: {
   //   text: 'Made by Elias Bitsch',
   // },
-  editLink: {
-    text: ' ',
-  },
+  // editLink: {
+  //   text: ' ',
+  // },
   feedback: {
     content: ' ',
   },
