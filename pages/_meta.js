@@ -1,4 +1,4 @@
-export default {
+module.exports = {        // Change to export default
   "index": "Welcome",
   "installation": "Installation",
   "1_linux_basics_for_ubuntu": "1. Linux Basics for Ubuntu",
