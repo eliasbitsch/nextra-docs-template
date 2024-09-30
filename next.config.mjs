@@ -4,6 +4,7 @@ import nextra from 'nextra';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = nextra({
+  reactStrictMode: true,
   theme: 'nextra-theme-docs',
   themeConfig: './theme.config.tsx',
   latex: true,
